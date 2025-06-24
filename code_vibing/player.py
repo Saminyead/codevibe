@@ -19,7 +19,8 @@ def listen_to_inputs(player: vlc.MediaPlayer, stop_flag: threading.Event):
                 continue
 
 
-def playback_loop(song: str | Path):
+def playback_loop(song_i: int, playlist: list[str|Path]):
+    song = playlist[song_i]
     player = vlc.MediaPlayer(song)
     player.play()
     stop_flag = threading.Event()

@@ -7,8 +7,8 @@ def main():
     music_folder = "./music"
     songs = os.listdir(music_folder)
     song_files = [f"{music_folder}/{song}" for song in songs]
-    for song_file in song_files:
-        playback_loop(song_file)
+    for i, _ in enumerate(song_files):
+        playback_loop(song_i =i, playlist=song_files)
 
 
 if __name__ == "__main__":
