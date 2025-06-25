@@ -41,9 +41,8 @@ class MusicPlayer:
         while self.player.get_state()!=vlc.State.Ended:
             time.sleep(0.2)
             if self.next_flag.is_set():
-                self.player.stop()
-                self.next_flag.clear()
-                break
+                self.next_track()
+                return
         self.index += 1
 
 
