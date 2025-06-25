@@ -17,6 +17,7 @@ class MusicPlayer:
         self.player.stop()
         # modulus to implement circular selection
         self.index = (self.index + 1) % len(self.playlist)
+        self.next_flag.clear()
 
 
     def listen_to_inputs(self):
@@ -35,16 +36,23 @@ class MusicPlayer:
                 else:
                     continue
 
+
     def playback_loop(self):
         while self.player.get_state()!=vlc.State.Ended:
-            time.sleep(0.3)
+            time.sleep(0.2)
+            if self.next_flag.is_set():
+                self.player.stop()
+                self.next_flag.clear()
+                break
+        self.index += 1
 
 
-    def play_song(self):
+    def play_current_song(self):
         song = self.playlist[self.index]
         self.player = vlc.MediaPlayer(song)
         self.player.play()
         self.playback_loop()
+
 
     def play_all_songs(self):
         threading.Thread(
@@ -52,6 +60,5 @@ class MusicPlayer:
             daemon=True,
         ).start()
         while self.index < len(self.playlist):
-            self.play_song()
-            self.index += 1
+            self.play_current_song()
         self.stop_flag.set()
