@@ -3,6 +3,7 @@ import threading
 import time
 
 from pathlib import Path
+from typing import Callable
 
 class MusicPlayer:
     def __init__(self, playlist:list[str|Path]):
@@ -12,6 +13,12 @@ class MusicPlayer:
         self.stop_flag:threading.Event = threading.Event()
         self.next_flag:threading.Event = threading.Event()
         self.prev_flag:threading.Event = threading.Event()
+        self.playback_cmds:dict[str,Callable] = {
+            # player being None initially causing AttributeError
+            "p": lambda: self.player.pause() if self.player else print("Player not ready."),
+            ">": self.next_flag.set,
+            "<": self.prev_flag.set,
+        }
 
     
     def next_track(self):
@@ -39,18 +46,14 @@ class MusicPlayer:
                 Enter any command:
                 """
             )
-            try:
+            cmd = cmd.lower().strip()
+            if cmd.isdigit():
                 jump_time = int(cmd)
                 self.player.set_time(jump_time * 1000)
-            except ValueError:
-                if cmd.lower() == "p":
-                    self.player.pause()
-                elif cmd.lower() == ">":
-                    self.next_flag.set()
-                elif cmd.lower() == "<":
-                    self.prev_flag.set()
-                else:
-                    continue
+            elif cmd in self.playback_cmds:
+                self.playback_cmds[cmd]()
+            else:
+                continue
 
 
     def monitor_playback(self):
