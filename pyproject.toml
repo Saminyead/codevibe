@@ -7,5 +7,6 @@ name = "code_vibing"
 version = "0.0.1"
 dependencies = [
     "python-vlc",
+	"pytubefix",
     'importlib-metadata; python_version>="3.11"',
 ]
