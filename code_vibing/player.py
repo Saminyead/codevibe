@@ -49,19 +49,21 @@ class MusicPlayer:
         self.player.set_time(max(0, current_time - seconds * 1000))
         self.rew_flag.clear()
 
+    def print_cmds(self):
+        print(
+            """Commands:
+                p - toggle pause/resume
+                > - go to next track
+                < - go to previous track
+                . - ff by 10 seconds
+                , - rewind by 10 seconds
+                any number - go that timestamp
+            """
+        )
+
     def listen_to_inputs(self):
         while not self.stop_flag.is_set():
-            cmd = input(
-                """Commands:
-                    p - toggle pause/resume
-                    > - go to next track
-                    < - go to previous track
-                    . - ff by 10 seconds
-                    , - rewind by 10 seconds
-                    any number - go that timestamp
-                Enter any command:
-                """
-            )
+            cmd = input("Enter any command: ")
             cmd = cmd.lower().strip()
             if cmd.isdigit():
                 jump_time = int(cmd)
@@ -95,6 +97,7 @@ class MusicPlayer:
         self.monitor_playback()
 
     def play_all_songs(self):
+        self.print_cmds()
         threading.Thread(
             target=self.listen_to_inputs,
             daemon=True,
