@@ -14,6 +14,8 @@ class MusicPlayer:
         self.stop_flag: threading.Event = threading.Event()
         self.next_flag: threading.Event = threading.Event()
         self.prev_flag: threading.Event = threading.Event()
+        self.ff_flag: threading.Event = threading.Event()
+        self.rew_flag: threading.Event = threading.Event()
         self.playback_cmds: dict[str, Callable] = {
             # player being None initially causing AttributeError
             "p": lambda: (
@@ -21,6 +23,8 @@ class MusicPlayer:
             ),
             ">": self.next_flag.set,
             "<": self.prev_flag.set,
+            ".": self.ff_flag.set,
+            ",": self.rew_flag.set,
         }
 
     def next_track(self):
@@ -35,6 +39,16 @@ class MusicPlayer:
         self.index = (self.index - 1) % len(self.playlist)
         self.prev_flag.clear()
 
+    def fast_forward(self, seconds=10):
+        current_time = self.player.get_time()
+        self.player.set_time(current_time + seconds * 1000)
+        self.ff_flag.clear()
+
+    def rewind(self, seconds=10):
+        current_time = self.player.get_time()
+        self.player.set_time(max(0, current_time - seconds * 1000))
+        self.rew_flag.clear()
+
     def listen_to_inputs(self):
         while not self.stop_flag.is_set():
             cmd = input(
@@ -42,6 +56,8 @@ class MusicPlayer:
                     p - toggle pause/resume
                     > - go to next track
                     < - go to previous track
+                    . - ff by 10 seconds
+                    , - rewind by 10 seconds
                     any number - go that timestamp
                 Enter any command:
                 """
@@ -64,6 +80,12 @@ class MusicPlayer:
             if self.prev_flag.is_set():
                 self.prev_track()
                 return
+            if self.ff_flag.is_set():
+                self.fast_forward()
+                continue
+            if self.rew_flag.is_set():
+                self.rewind()
+                continue
         self.index += 1
 
     def play_current_song(self):
