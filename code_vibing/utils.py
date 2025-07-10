@@ -20,7 +20,7 @@ def find_latest_playlist(playlist_path:str|Path, dt_format:str):
     return max(pl_dt_dict)
 
 def search_song_yt(query:str, api_key:str):
-    url = "https://www.googleapis.com/youtube/v3/playlists"
+    url = "https://www.googleapis.com/youtube/v3/search"
     params = {"key":api_key, "part":"snippet", "q":query}
     res = requests.get(url=url, params=params)
     return res.json()['items'][0]['id']['videoId']
