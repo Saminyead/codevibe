@@ -1,5 +1,7 @@
+.env
 .vibe_venv/
 *.egg-info
 __pycache__
 todo.md
 music/
+tryout.py
