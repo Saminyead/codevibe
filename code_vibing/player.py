@@ -27,6 +27,24 @@ class MusicPlayer:
             ",": self.rew_flag.set,
         }
 
+    def _get_elapsed_time(self):
+        song_len = self.player.get_length()
+        song_len_seconds = song_len/1000
+        song_len_min_sec = divmod(song_len_seconds, 60)
+        song_len_min_sec_str = f"{song_len_min_sec[0]:2f}:{song_len_min_sec[1]:2f}"
+        current_time = self.player.get_time()
+        current_time_seconds = current_time/1000
+        current_time_min_sec = divmod(current_time_seconds, 60)
+        current_time_min_sec_str = f"{current_time_min_sec[0]:2f}:{current_time_min_sec[1]:2f}"
+        return f"{current_time_min_sec_str}/{song_len_min_sec_str}"
+
+    def show_elapsed_time(self):
+        while True:
+            if not self.player:
+                continue
+            print(f"\r{self._get_elapsed_time()}", end="", flush=True)
+            time.sleep(1)
+
     def next_track(self):
         self.player.stop()
         # modulus to implement circular selection
