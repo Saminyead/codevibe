@@ -60,21 +60,6 @@ def create_playlist(song_list:list[str], yt_api_key:str=YT_API_KEY):
     return video_url_list
 
 
-def input_playlist(api_key:str):
-    print("Please enter your list of songs.")
-    user_input = None
-    video_url_list = []
-    while True:
-        user_input = input(
-            "Please enter a name of your song to add to playlist. If you don't want to add no more, just enter 's': "
-        )
-        if user_input=="s":
-            break
-        video_id = search_song_yt(query=user_input, api_key=api_key)
-        video_url_list.append(f"https://www.youtube.com/watch?v={video_id}")
-    return video_url_list
-
-
 def main():
     song_list = get_recommended_song_list()
     print(song_list)
