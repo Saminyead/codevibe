@@ -11,7 +11,8 @@ class MusicPlayer:
     def __init__(self, playlist: list[str | Path], screen: curses.window, screen_init_pos=(0,0)):
         self.playlist: list[str | Path] = playlist
         self.index: int = 0
-        self.player: vlc.MediaPlayer | None = None
+        self.instance: vlc.Instance = vlc.Instance('--quiet', '--no-xlib', '--verbose=0')
+        self.player: vlc.MediaPlayer = self.instance.media_player_new()
         self.screen: curses.window = screen
         self.screen_init_pos: tuple[int, int] = screen_init_pos
         self.stop_flag: threading.Event = threading.Event()
@@ -120,9 +121,7 @@ class MusicPlayer:
 
     def play_current_song(self):
         song = self.playlist[self.index]
-        instance = vlc.Instance('--quiet', '--no-xlib', '--verbose=0')
-        media = instance.media_new(song)
-        self.player = instance.media_player_new()
+        media = self.instance.media_new(song)
         self.player.set_media(media)
         self.player.play()
         self.show_now_playing(y_offset=10)
