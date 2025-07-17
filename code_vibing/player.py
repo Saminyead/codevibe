@@ -120,7 +120,10 @@ class MusicPlayer:
 
     def play_current_song(self):
         song = self.playlist[self.index]
-        self.player = vlc.MediaPlayer(song)
+        instance = vlc.Instance('--quiet', '--no-xlib', '--verbose=0')
+        media = instance.media_new(song)
+        self.player = instance.media_player_new()
+        self.player.set_media(media)
         self.player.play()
         self.show_now_playing(y_offset=10)
         self.monitor_playback()
