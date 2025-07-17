@@ -5,6 +5,7 @@ from ai import SYS_PROMPT, OPENROUTER_RESPONSE_FORMAT
 from datetime import datetime
 import requests
 import json
+import curses
 
 import os
 import tempfile
@@ -22,13 +23,20 @@ OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 
 def get_recommended_song_list(
+    stdscr:curses.window,
+    scr_pos:tuple[int,int],
     url:str=OPENROUTER_URL,
     api_key:str=OPENROUTER_API_KEY,
     model:str=MODEL,
     sys_prompt:str=SYS_PROMPT,
     res_format:dict=OPENROUTER_RESPONSE_FORMAT,
-):
-    user_input = input("Tell me your vibes below for a great list of music: ")
+) -> list[str]:
+    user_input_prompt = "Tell me your vibes for a great list of music: "
+    stdscr.addstr(scr_pos[0], scr_pos[1], user_input_prompt)
+    stdscr.refresh()
+    curses.echo()
+    user_input=stdscr.getstr(scr_pos[0], scr_pos[1] + len(user_input_prompt)).decode()
+    curses.noecho()
     res = requests.post(
         url=url,
         headers={"Authorization": f"Bearer {api_key}"},
@@ -60,11 +68,14 @@ def create_playlist(song_list:list[str], yt_api_key:str=YT_API_KEY):
     return video_url_list
 
 
-def main():
-    song_list = get_recommended_song_list()
-    print(song_list)
+def app(stdscr:curses.window, init_scr_pos:tuple[int,int]=(0,0)):
+    song_list = get_recommended_song_list(stdscr, init_scr_pos)
+    stdscr.refresh()
+    stdscr.addstr(init_scr_pos[0] + 5, init_scr_pos[1], f"{song_list}")
+    stdscr.refresh()
     playlist = create_playlist(song_list=song_list)
-    print(playlist)
+    stdscr.addstr(init_scr_pos[0] + 10, init_scr_pos[1], f"{playlist}")
+    stdscr.refresh()
     playlist_folder_prefix = "codevibe_playlist_"
     dt_format = "%Y-%m-%d_%H-%M-%S"
     date_now = datetime.now().strftime(dt_format)
@@ -73,8 +84,14 @@ def main():
         download_track(url=url, dest=playlist_folder)
     playlist_song_files = os.listdir(playlist_folder)
     playlist = [os.path.join(playlist_folder,song) for song in playlist_song_files]
-    player = MusicPlayer(playlist=playlist)
+    player_init_pos = init_scr_pos[0] + 15, init_scr_pos[1]
+    player = MusicPlayer(
+        playlist=playlist, screen=stdscr, screen_init_pos=player_init_pos
+    )
     player.play_all_songs()
+
+def main():
+    curses.wrapper(app)
 
 
 if __name__ == "__main__":
