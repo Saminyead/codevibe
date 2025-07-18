@@ -92,7 +92,7 @@ class MusicPlayer:
             else:
                 continue
 
-    def monitor_playback(self, elapsed_time_pos:tuple[int, int]):
+    def monitor_playback(self, elapsed_time_pos: tuple[int, int]):
         while self.player.get_state() != vlc.State.Ended:
             time.sleep(0.2)
             self.show_elapsed_time(scr_pos=elapsed_time_pos)
@@ -110,7 +110,7 @@ class MusicPlayer:
                 self.rewind()
                 continue
         self.index += 1
-    
+
     def show_now_playing(self, scr_pos: tuple[int, int]):
         curr_track = self.player.get_media()
         curr_track.parse()
@@ -138,8 +138,8 @@ class MusicPlayer:
         self.print_cmds()
         self.screen.refresh()
         curr_scr_pos = self.screen.getyx()
-        now_playing_scr_pos = curr_scr_pos[0] + 1, 0
-        elapsed_time_scr_pos = curr_scr_pos[0] + 2, 0        
+        now_playing_scr_pos = curr_scr_pos[0] + 2, 0
+        elapsed_time_scr_pos = curr_scr_pos[0] + 4, 0
         threading.Thread(
             target=self.listen_to_inputs,
             daemon=True,
