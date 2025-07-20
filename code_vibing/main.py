@@ -7,6 +7,9 @@ import requests
 import json
 import curses
 
+from pathlib import Path
+import threading
+
 import os
 import tempfile
 from dotenv import load_dotenv
@@ -57,6 +60,11 @@ def get_recommended_song_list(
     return ai_res_dict["songs"]
 
 
+def download_tracks_all(url_list: str, playlist_folder: str | Path):
+    for url in url_list:
+        download_track(url=url, dest=playlist_folder)
+
+
 def create_playlist(song_list: list[str], yt_api_key: str = YT_API_KEY):
     video_url_list = []
     for song in song_list:
@@ -79,13 +87,17 @@ def app(stdscr: curses.window, init_scr_pos: tuple[int, int] = (0, 0)):
     dt_format = "%Y-%m-%d_%H-%M-%S"
     date_now = datetime.now().strftime(dt_format)
     playlist_folder = f"{TEMP_DIR}/{playlist_folder_prefix}{date_now}"
-    for url in playlist:
-        download_track(url=url, dest=playlist_folder)
-    playlist_song_files = os.listdir(playlist_folder)
-    playlist = [os.path.join(playlist_folder, song) for song in playlist_song_files]
+    os.mkdir(playlist_folder)
+    threading.Thread(
+        target=download_tracks_all,
+        kwargs={"url_list": playlist, "playlist_folder": playlist_folder},
+    ).start()
     player_init_pos = stdscr.getyx()[0] + 3, 0
     player = MusicPlayer(
-        playlist=playlist, screen=stdscr, screen_init_pos=player_init_pos
+        playlist_folder=playlist_folder,
+        expected_len=len(playlist),
+        screen=stdscr,
+        screen_init_pos=player_init_pos,
     )
     player.play_all_songs()
 
