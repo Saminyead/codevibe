@@ -31,6 +31,7 @@ class MusicPlayer:
             "<": self.prev_flag.set,
             ".": self.ff_flag.set,
             ",": self.rew_flag.set,
+            "x": self.stop_flag.set,
         }
 
     def _get_elapsed_time(self):
@@ -80,7 +81,7 @@ class MusicPlayer:
             < - go to previous track
             . - ff by 10 seconds
             , - rewind by 10 seconds
-            any number - go that timestamp"""
+            x - quit player"""
         pos_y, pos_x = self.screen_init_pos
         self.screen.addstr(pos_y, pos_x, cmds)
 
@@ -109,6 +110,9 @@ class MusicPlayer:
             if self.rew_flag.is_set():
                 self.rewind()
                 continue
+            if self.stop_flag.is_set():
+                self.player.stop()
+                return
         self.index += 1
 
     def show_now_playing(self, scr_pos: tuple[int, int]):
@@ -144,6 +148,6 @@ class MusicPlayer:
             target=self.listen_to_inputs,
             daemon=True,
         ).start()
-        while self.index < len(self.playlist):
+        while self.index < len(self.playlist) and not self.stop_flag.is_set():
             self.play_current_song(now_playing_scr_pos, elapsed_time_scr_pos)
         self.stop_flag.set()
