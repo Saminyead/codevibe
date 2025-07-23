@@ -17,7 +17,7 @@ class MusicPlayer:
         screen_init_pos=(0, 0),
     ):
         self.playlist_folder: str | Path = playlist_folder
-        self.playlist: list[str | Path] | None = None
+        self.playlist: list[str | Path] = []
         self.expected_len: int = expected_len
         self.index: int = 0
         self.instance: vlc.Instance = vlc.Instance(
@@ -40,15 +40,6 @@ class MusicPlayer:
             ",": self.rew_flag.set,
             "x": self.stop_flag.set,
         }
-
-    def get_playlist(self):
-        ext_list = ("mp3", "ogg", "m4a", "wav", "wma", "flac", "aac")
-        files = os.listdir(self.playlist_folder)
-        self.playlist = [
-            os.path.join(self.playlist_folder, file)
-            for file in files
-            if file.endswith(ext_list)
-        ]
 
     def _get_elapsed_time(self):
         song_len = self.player.get_length()
@@ -126,9 +117,6 @@ class MusicPlayer:
             if self.rew_flag.is_set():
                 self.rewind()
                 continue
-            if self.player.get_state() in (vlc.State.Stopped, vlc.State.Ended):
-                self.get_playlist()
-                return
             if self.stop_flag.is_set():
                 self.player.stop()
                 return
@@ -160,7 +148,6 @@ class MusicPlayer:
     def play_all_songs(self):
         while not self.playlist:
             time.sleep(1)
-            self.get_playlist()
         self.print_cmds()
         self.screen.refresh()
         curr_scr_pos = self.screen.getyx()
@@ -172,6 +159,6 @@ class MusicPlayer:
         ).start()
         while self.index < self.expected_len and not self.stop_flag.is_set():
             if self.index >= len(self.playlist):
-                self.index -= 1
+                time.sleep(1)
+                continue
             self.play_current_song(now_playing_scr_pos, elapsed_time_scr_pos)
-            self.get_playlist()

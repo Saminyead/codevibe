@@ -5,14 +5,19 @@ from datetime import datetime
 import requests
 
 from pathlib import Path
+from typing import Callable, Optional
 
 
-def download_track(url: str, dest: str | Path):
+def download_track(
+    url: str, dest: str, playlist: list[str]
+):
     yt = YouTube(url)
     ys = yt.streams.get_audio_only()
     if not ys:
         raise Exception(f"Error finding audio for {yt.title}")
-    ys.download(output_path=dest)
+    song_path = ys.download(output_path=dest)
+    if song_path:
+        playlist.append(song_path)
 
 
 def find_latest_playlist(playlist_path: str | Path, dt_format: str):
