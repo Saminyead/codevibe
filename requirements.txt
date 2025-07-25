@@ -1,0 +1,3 @@
+python-dotenv==1.1.1
+pytubefix==9.4.1
+Requests==2.32.4
