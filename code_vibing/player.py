@@ -44,7 +44,9 @@ class MusicPlayer:
         song_len = self.player.get_length()
         song_len_seconds = song_len / 1000
         song_len_min_sec = divmod(song_len_seconds, 60)
-        song_len_min_sec_str = f"{int(song_len_min_sec[0]):0>2}:{int(song_len_min_sec[1]):0>2}"
+        song_len_min_sec_str = (
+            f"{int(song_len_min_sec[0]):0>2}:{int(song_len_min_sec[1]):0>2}"
+        )
         current_time = self.player.get_time()
         current_time_seconds = current_time / 1000
         current_time_min_sec = divmod(current_time_seconds, 60)

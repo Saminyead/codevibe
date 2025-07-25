@@ -1,9 +1,10 @@
 from player import MusicPlayer
-from utils import search_song_yt, download_track
+from utils import search_song_yt, download_track, setup_logging
 from ai import SYS_PROMPT, OPENROUTER_RESPONSE_FORMAT
 
 from exceptions import AiFormatError
 from pytubefix.exceptions import PytubeFixError
+from logging import RootLogger
 
 from datetime import datetime
 import requests
@@ -26,15 +27,17 @@ TEMP_DIR = tempfile.gettempdir()
 MODEL = "mistralai/mistral-small-3.2-24b-instruct:free"
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
+LOGGER = setup_logging("logs/app.log")
 
-def request_to_ai(
+
+def get_ai_song_list(
     user_input: str,
     url: str = OPENROUTER_URL,
     api_key: str = OPENROUTER_API_KEY,
     model: str = MODEL,
     sys_prompt: str = SYS_PROMPT,
     res_format: dict = OPENROUTER_RESPONSE_FORMAT,
-):
+) -> list[str]:
     res = requests.post(
         url=url,
         headers={"Authorization": f"Bearer {api_key}"},
@@ -57,13 +60,21 @@ def request_to_ai(
         raise AiFormatError
     return song_list
 
-def retry_ai_request(user_input:str, n_attempts:int = 3):
+
+def get_ai_song_list_retry(
+    user_input: str, n_attempts: int = 3, logger: RootLogger = LOGGER
+):
     for attempt in range(n_attempts):
         try:
-            return request_to_ai(user_input=user_input)
-        except AiFormatError:
-            attempt += 1
-    raise AiFormatError
+            return get_ai_song_list(user_input=user_input)
+        except Exception as e:
+            last_exception = e
+            logger.warning(
+                f"Attempt {attempt + 1} failed for getting AI song list with {type(e).__name__}: {e}"
+            )
+    logger.error("Max retries exceeded for getting AI song list.")
+    raise last_exception
+
 
 def get_recommended_song_list(
     stdscr: curses.window,
@@ -75,36 +86,37 @@ def get_recommended_song_list(
     curses.echo()
     user_input = stdscr.getstr(scr_pos[0], scr_pos[1] + len(user_input_prompt)).decode()
     curses.noecho()
-    return retry_ai_request(user_input)
+    return get_ai_song_list_retry(user_input)
 
-def download_tracks_with_retry(
-    url:str,
-    playlist_folder: str,
-    playlist: list[str],
-    n_attempts: int = 3,
+
+def get_yt_url_list(
+    song_list: list[str], yt_api_key: str = YT_API_KEY, logger: RootLogger = LOGGER
 ):
-    for attempt in range(n_attempts):
-        try:
-            download_track(
-                url=url, dest=playlist_folder, playlist=playlist
-            )
-            break
-        except PytubeFixError:
-            attempt += 1
-    # TODO: log failure of download
-
-def download_tracks_all(
-    url_list:list[str], playlist_folder: str, playlist: list[str]
-):
-    for url in url_list:
-        download_tracks_with_retry(url, playlist_folder=playlist_folder, playlist=playlist)
-
-def create_playlist(song_list: list[str], yt_api_key: str = YT_API_KEY):
     video_url_list = []
     for song in song_list:
-        video_id = search_song_yt(query=song, api_key=yt_api_key)
+        try:
+            video_id = search_song_yt(query=song, api_key=yt_api_key)
+        except Exception as e:
+            logger.error(
+                f"Could not download track for {song}, due to the following error:\n{e}"
+            )
+            continue
         video_url_list.append(f"https://www.youtube.com/watch?v={video_id}")
     return video_url_list
+
+
+def download_tracks_all(
+    url_list: list[str],
+    playlist_folder: str,
+    playlist: list[str],
+    logger: RootLogger = LOGGER,
+):
+    for url in url_list:
+        try:
+            download_track(url=url, dest=playlist_folder, playlist=playlist)
+        except PytubeFixError:
+            logger.error(f"Error downloading track for url {url}")
+            continue
 
 
 def app(stdscr: curses.window, init_scr_pos: tuple[int, int] = (0, 0)):
@@ -113,7 +125,7 @@ def app(stdscr: curses.window, init_scr_pos: tuple[int, int] = (0, 0)):
     song_list_y, song_list_x = stdscr.getyx()[0] + 2, 0
     stdscr.addstr(song_list_y, song_list_x, f"{song_list}")
     stdscr.refresh()
-    playlist = create_playlist(song_list=song_list)
+    playlist = get_yt_url_list(song_list=song_list)
     playlist_y, playlist_x = stdscr.getyx()[0] + 2, 0
     stdscr.addstr(playlist_y, playlist_x, f"{playlist}")
     stdscr.refresh()
@@ -136,9 +148,9 @@ def app(stdscr: curses.window, init_scr_pos: tuple[int, int] = (0, 0)):
     threading.Thread(
         target=download_tracks_all,
         kwargs={
-            "url_list": playlist, 
+            "url_list": playlist,
             "playlist_folder": playlist_folder,
-            "playlist": player.playlist
+            "playlist": player.playlist,
         },
     ).start()
     player.play_all_songs()
