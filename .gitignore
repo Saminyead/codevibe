@@ -6,3 +6,6 @@ todo.md
 music/
 tryout.py
 temp_scripts/
+build/
+dist/
+*.spec

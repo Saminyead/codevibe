@@ -4,7 +4,6 @@ import curses
 import time
 
 from pathlib import Path
-import os
 from typing import Callable
 
 
