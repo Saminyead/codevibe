@@ -44,11 +44,12 @@ def setup_logging(
 ) -> logging.RootLogger:
     if not os.path.exists(log_dir):
         os.mkdir(log_dir)
+    file_path = f"{log_dir}/{log_file}"
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",
         handlers=[
-            logging.FileHandler(log_file,encoding="utf=8"),
+            logging.FileHandler(file_path,encoding="utf=8"),
         ]
     )
     return logging

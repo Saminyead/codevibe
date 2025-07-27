@@ -27,7 +27,7 @@ TEMP_DIR = tempfile.gettempdir()
 MODEL = "mistralai/mistral-small-3.2-24b-instruct:free"
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
-LOGGER = setup_logging("logs/app.log", "./logs")
+LOGGER = setup_logging("app.log", "./logs")
 
 
 def get_ai_song_list(
