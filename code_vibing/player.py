@@ -1,4 +1,4 @@
-from code_vibing import vlc
+import vlc
 import threading
 import curses
 import time
