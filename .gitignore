@@ -9,3 +9,4 @@ temp_scripts/
 build/
 dist/
 *.spec
+logs/

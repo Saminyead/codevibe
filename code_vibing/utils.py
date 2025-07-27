@@ -39,7 +39,11 @@ def search_song_yt(query: str, api_key: str) -> str:
             continue
     raise KeyError
 
-def setup_logging(log_file: str | Path) -> logging.RootLogger:
+def setup_logging(
+    log_file: str | Path, log_dir: str | Path = "./logs"
+) -> logging.RootLogger:
+    if not os.path.exists(log_dir):
+        os.mkdir(log_dir)
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",
