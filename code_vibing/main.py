@@ -122,7 +122,7 @@ def app(stdscr: curses.window, init_scr_pos: tuple[int, int] = (0, 0)):
     try:  
         # Windows throws error during the very import of vlc Python package.
         from player import MusicPlayer
-    except NameError:
+    except FileNotFoundError:
         import platform
         bit_version = platform.architecture()[0]
         stdscr.addstr(
