@@ -132,8 +132,9 @@ def app(stdscr: curses.window, init_scr_pos: tuple[int, int] = (0, 0)):
             VLC Media Player and launch the program again. If it is installed
             make sure it is the {bit_version} version of VLC."""
         )
-        stdscr.addstr(1,0,"Press any key to exit.")
+        stdscr.addstr(stdscr.getyx()[0] + 2, 0, "Press any key to exit.")
         stdscr.getch()
+        return
     song_list = get_recommended_song_list(stdscr, init_scr_pos)
     stdscr.refresh()
     song_list_y, song_list_x = stdscr.getyx()[0] + 2, 0
