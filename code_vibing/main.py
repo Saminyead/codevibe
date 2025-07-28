@@ -1,4 +1,3 @@
-from player import MusicPlayer
 from utils import search_song_yt, download_track, setup_logging
 from ai import SYS_PROMPT, OPENROUTER_RESPONSE_FORMAT
 
@@ -120,6 +119,21 @@ def download_tracks_all(
 
 
 def app(stdscr: curses.window, init_scr_pos: tuple[int, int] = (0, 0)):
+    try:  
+        # Windows throws error during the very import of vlc Python package.
+        from player import MusicPlayer
+    except NameError:
+        import platform
+        bit_version = platform.architecture()[0]
+        stdscr.addstr(
+            0,
+            0,
+            f"""This program requires VLC Media Player to run. Please install
+            VLC Media Player and launch the program again. If it is installed
+            make sure it is the {bit_version} version of VLC."""
+        )
+        stdscr.addstr(1,0,"Press any key to exit.")
+        stdscr.getch()
     song_list = get_recommended_song_list(stdscr, init_scr_pos)
     stdscr.refresh()
     song_list_y, song_list_x = stdscr.getyx()[0] + 2, 0
