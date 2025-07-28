@@ -4,6 +4,7 @@ from ai import SYS_PROMPT, OPENROUTER_RESPONSE_FORMAT
 from exceptions import AiFormatError
 from pytubefix.exceptions import PytubeFixError
 from logging import RootLogger
+import vlc
 
 from datetime import datetime
 import requests
@@ -129,8 +130,20 @@ def app(stdscr: curses.window, init_scr_pos: tuple[int, int] = (0, 0)):
             0,
             0,
             f"""This program requires VLC Media Player to run. Please install
-            VLC Media Player and launch the program again. If it is installed
-            make sure it is the {bit_version} version of VLC."""
+            VLC Media Player and launch the program again. If it is already 
+            installed make sure it is the {bit_version} version of VLC."""
+        )
+        stdscr.addstr(stdscr.getyx()[0] + 2, 0, "Press any key to exit.")
+        stdscr.getch()
+        return
+    try:
+        vlc.Instance()
+    except NameError:
+        stdscr.addstr(
+            0,
+            0,
+            """This program requires VLC Media Player to run. Please install
+            VLC Media Player and launch the program again."""
         )
         stdscr.addstr(stdscr.getyx()[0] + 2, 0, "Press any key to exit.")
         stdscr.getch()
