@@ -1,4 +1,4 @@
-from utils import search_song_yt, download_track, setup_logging
+from utils import search_song_yt, download_track, setup_logging, check_and_save_api_key
 from ai import SYS_PROMPT, OPENROUTER_RESPONSE_FORMAT
 
 from exceptions import AiFormatError
@@ -15,12 +15,8 @@ import threading
 
 import os
 import tempfile
+import functools
 from dotenv import load_dotenv
-
-load_dotenv()
-
-YT_API_KEY = os.getenv("yt_api_key")
-OPENROUTER_API_KEY = os.getenv("openrouter_api_key")
 
 TEMP_DIR = tempfile.gettempdir()
 
@@ -32,8 +28,8 @@ LOGGER = setup_logging("app.log", "./logs")
 
 def get_ai_song_list(
     user_input: str,
+    api_key: str,
     url: str = OPENROUTER_URL,
-    api_key: str = OPENROUTER_API_KEY,
     model: str = MODEL,
     sys_prompt: str = SYS_PROMPT,
     res_format: dict = OPENROUTER_RESPONSE_FORMAT,
@@ -62,11 +58,11 @@ def get_ai_song_list(
 
 
 def get_ai_song_list_retry(
-    user_input: str, n_attempts: int = 3, logger: RootLogger = LOGGER
+    user_input: str, api_key:str, n_attempts: int = 3, logger: RootLogger = LOGGER
 ):
     for attempt in range(n_attempts):
         try:
-            return get_ai_song_list(user_input=user_input)
+            return get_ai_song_list(user_input=user_input, api_key=api_key)
         except Exception as e:
             last_exception = e
             logger.warning(
@@ -79,6 +75,7 @@ def get_ai_song_list_retry(
 def get_recommended_song_list(
     stdscr: curses.window,
     scr_pos: tuple[int, int],
+    ai_api_key: str
 ) -> list[str]:
     user_input_prompt = "Tell me your vibes for a great list of music: "
     stdscr.addstr(scr_pos[0], scr_pos[1], user_input_prompt)
@@ -86,11 +83,11 @@ def get_recommended_song_list(
     curses.echo()
     user_input = stdscr.getstr(scr_pos[0], scr_pos[1] + len(user_input_prompt)).decode()
     curses.noecho()
-    return get_ai_song_list_retry(user_input)
+    return get_ai_song_list_retry(user_input=user_input, api_key=ai_api_key)
 
 
 def get_yt_url_list(
-    song_list: list[str], yt_api_key: str = YT_API_KEY, logger: RootLogger = LOGGER
+    song_list: list[str], yt_api_key: str, logger: RootLogger = LOGGER
 ):
     video_url_list = []
     for song in song_list:
@@ -119,7 +116,12 @@ def download_tracks_all(
             continue
 
 
-def app(stdscr: curses.window, init_scr_pos: tuple[int, int] = (0, 0)):
+def app(
+    stdscr: curses.window,
+    ai_api_key: str,
+    yt_api_key: str,
+    init_scr_pos: tuple[int, int] = (0, 0)
+):
     try:  
         # Windows throws error during the very import of vlc Python package.
         from player import MusicPlayer
@@ -148,12 +150,12 @@ def app(stdscr: curses.window, init_scr_pos: tuple[int, int] = (0, 0)):
         stdscr.addstr(stdscr.getyx()[0] + 2, 0, "Press any key to exit.")
         stdscr.getch()
         return
-    song_list = get_recommended_song_list(stdscr, init_scr_pos)
+    song_list = get_recommended_song_list(stdscr, init_scr_pos, ai_api_key)
     stdscr.refresh()
     song_list_y, song_list_x = stdscr.getyx()[0] + 2, 0
     stdscr.addstr(song_list_y, song_list_x, f"{song_list}")
     stdscr.refresh()
-    playlist = get_yt_url_list(song_list=song_list)
+    playlist = get_yt_url_list(song_list=song_list, yt_api_key=yt_api_key)
     playlist_y, playlist_x = stdscr.getyx()[0] + 2, 0
     stdscr.addstr(playlist_y, playlist_x, f"{playlist}")
     stdscr.refresh()
@@ -185,7 +187,23 @@ def app(stdscr: curses.window, init_scr_pos: tuple[int, int] = (0, 0)):
 
 
 def main():
-    curses.wrapper(app)
+    load_dotenv()
+    openrouter_api_key=os.getenv("openrouter_api_key")
+    yt_api_key=os.getenv("yt_api_key")
+    if not os.environ["openrouter_api_key"]:
+        openrouter_api_key = check_and_save_api_key(
+            env_var_name="openrouter_api_key",
+            env_var_desc="Openrouter API key"
+        )
+    if not os.environ["yt_api_key"]:
+        yt_api_key = check_and_save_api_key(
+            env_var_name="yt_api_key",
+            env_var_desc="Google Developer API key"
+        )
+    app_with_api_keys = functools.partial(
+        app, ai_api_key=openrouter_api_key, yt_api_key=yt_api_key
+    )
+    curses.wrapper(app_with_api_keys)
 
 
 if __name__ == "__main__":

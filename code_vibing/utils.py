@@ -53,3 +53,11 @@ def setup_logging(
         ]
     )
     return logging
+
+
+def check_and_save_api_key(env_var_name:str, env_var_desc:str) -> str:
+        print(f"This program requires an {env_var_desc}.")
+        env_var_value = input(f"Please enter your {env_var_desc} here: ")
+        with open(".env", mode="a", encoding="utf-8") as env_fp:
+            env_fp.write(f"\n{env_var_name}={env_var_value}")
+        return env_var_value
