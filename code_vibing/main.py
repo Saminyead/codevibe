@@ -163,7 +163,7 @@ def get_api_keys_from_user(
         0,
         "Do you wish to save the API keys? Press y to save, press n to cancel."
     )
-    save_status_user_input = stdscr.getch()
+    save_status_user_input = stdscr.getkey()
     if save_status_user_input in ("y","Y"):
         env_path = ".env"
         is_empty = not os.path.exists(env_path) or os.stat(env_path).st_size == 0
