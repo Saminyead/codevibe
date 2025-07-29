@@ -15,7 +15,6 @@ import threading
 
 import os
 import tempfile
-import functools
 from dotenv import load_dotenv
 
 TEMP_DIR = tempfile.gettempdir()
@@ -24,6 +23,10 @@ MODEL = "mistralai/mistral-small-3.2-24b-instruct:free"
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 LOGGER = setup_logging("app.log", "./logs")
+
+load_dotenv()
+OPENROUTER_API_KEY=os.getenv("openrouter_api_key")
+YT_API_KEY=os.getenv("yt_api_key")
 
 
 def get_ai_song_list(
@@ -116,10 +119,72 @@ def download_tracks_all(
             continue
 
 
+def get_api_keys_from_user(
+    stdscr: curses.window, 
+    openrouter_api_key:str | None = OPENROUTER_API_KEY,
+    yt_api_key:str | None = YT_API_KEY
+) -> dict[str,str]:
+    openrouter_api_key_input = None
+    yt_api_key_input = None
+    if not openrouter_api_key:
+        init_pos = stdscr.getyx()
+        stdscr.addstr(
+            init_pos[0] + 2,
+            0,
+            "This program requires an Openrouter API KEY."
+        )
+        enter_openrouter_prompt = "Please enter your Openrouter API Key here: "
+        stdscr.addstr(init_pos[0] + 3, 0, enter_openrouter_prompt)
+        curses.echo()
+        openrouter_api_key_input = stdscr.getstr(
+            init_pos[0] + 3, len(enter_openrouter_prompt)
+        ).decode().strip()
+        curses.noecho()
+        os.environ["openrouter_api_key"] = openrouter_api_key_input
+        openrouter_api_key = os.environ["openrouter_api_key"]
+    if not yt_api_key:
+        init_pos = stdscr.getyx()
+        stdscr.addstr(
+            init_pos[0] + 2,
+            0,
+            "This program requires an Google Developer API Key."
+        )
+        enter_yt_prompt = "Please enter your Google Developer API Key here: "
+        stdscr.addstr(init_pos[0] + 3, 0, enter_yt_prompt)
+        curses.echo()
+        yt_api_key_input = stdscr.getstr(
+            init_pos[0] + 3, len(enter_yt_prompt)
+        ).decode().strip()
+        curses.noecho()
+        os.environ["yt_api_key"] = yt_api_key_input
+        yt_api_key = os.environ["yt_api_key"]
+    stdscr.addstr(
+        stdscr.getyx()[0] + 2,
+        0,
+        "Do you wish to save the API keys? Press y to save, press n to cancel."
+    )
+    save_status_user_input = stdscr.getch()
+    if save_status_user_input in ("y","Y"):
+        env_path = ".env"
+        is_empty = not os.path.exists(env_path) or os.stat(env_path).st_size == 0
+        with open(file=env_path, mode="a") as fp:
+            if is_empty:
+                fp.write("\n")
+            if openrouter_api_key_input:
+                fp.write(f"openrouter_api_key={openrouter_api_key_input}\n")
+            if yt_api_key_input:
+                fp.write(f"yt_api_key={yt_api_key_input}\n")
+    stdscr.clear()
+    return {
+        "openrouter_api_key": openrouter_api_key,
+        "yt_api_key": yt_api_key
+    }
+
+
 def app(
     stdscr: curses.window,
-    ai_api_key: str,
-    yt_api_key: str,
+    ai_api_key: str | None = OPENROUTER_API_KEY,
+    yt_api_key: str | None = YT_API_KEY,
     init_scr_pos: tuple[int, int] = (0, 0)
 ):
     try:  
@@ -150,6 +215,10 @@ def app(
         stdscr.addstr(stdscr.getyx()[0] + 2, 0, "Press any key to exit.")
         stdscr.getch()
         return
+    if not ai_api_key or not yt_api_key:
+        api_keys = get_api_keys_from_user(stdscr)
+        ai_api_key = api_keys["openrouter_api_key"]
+        yt_api_key = api_keys["yt_api_key"]
     song_list = get_recommended_song_list(stdscr, init_scr_pos, ai_api_key)
     stdscr.refresh()
     song_list_y, song_list_x = stdscr.getyx()[0] + 2, 0
@@ -187,23 +256,7 @@ def app(
 
 
 def main():
-    load_dotenv()
-    openrouter_api_key=os.getenv("openrouter_api_key")
-    yt_api_key=os.getenv("yt_api_key")
-    if not os.environ["openrouter_api_key"]:
-        openrouter_api_key = check_and_save_api_key(
-            env_var_name="openrouter_api_key",
-            env_var_desc="Openrouter API key"
-        )
-    if not os.environ["yt_api_key"]:
-        yt_api_key = check_and_save_api_key(
-            env_var_name="yt_api_key",
-            env_var_desc="Google Developer API key"
-        )
-    app_with_api_keys = functools.partial(
-        app, ai_api_key=openrouter_api_key, yt_api_key=yt_api_key
-    )
-    curses.wrapper(app_with_api_keys)
+    curses.wrapper(app)
 
 
 if __name__ == "__main__":
