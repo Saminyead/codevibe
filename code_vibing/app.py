@@ -3,6 +3,7 @@ import curses
 
 import os
 import vlc
+import subprocess
 import threading
 from datetime import datetime
 
@@ -136,7 +137,7 @@ def app(
         stdscr.addstr(stdscr.getyx()[0] + 2, 0, "Press any key to exit.")
         stdscr.getch()
         return
-    try:
+    try:  # for Linux
         vlc.Instance()
     except NameError:
         stdscr.addstr(
@@ -148,6 +149,14 @@ def app(
         stdscr.addstr(stdscr.getyx()[0] + 2, 0, "Press any key to exit.")
         stdscr.getch()
         return
+    # sometimes plugin path not properly detected in Linux
+    if "VLC_PLUGIN_PATH" not in os.environ:
+        ldconfig_output = subprocess.run(["ldconfig", "-p"], capture_output=True)
+        ldconfig_output_str = ldconfig_output.stdout.decode()
+        plugin_path = [
+            string for string in ldconfig_output_str.split() if r"/libvlc.so" in string
+        ][0]
+        os.environ["VLC_PLUGIN_PATH"] = f"/usr{plugin_path}"
     if not ai_api_key or not yt_api_key:
         api_keys = get_api_keys_from_user(
             stdscr, openrouter_api_key=ai_api_key, yt_api_key=yt_api_key
