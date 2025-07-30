@@ -55,25 +55,17 @@ def setup_logging(
     return logging
 
 
-def check_and_save_api_key(env_var_name: str, env_var_desc: str) -> str:
-    print(f"This program requires an {env_var_desc}.")
-    env_var_value = input(f"Please enter your {env_var_desc} here: ")
-    with open(".env", mode="a", encoding="utf-8") as env_fp:
-        env_fp.write(f"\n{env_var_name}={env_var_value}")
-    return env_var_value
-
-
 def get_yt_url_list(song_list: list[str], yt_api_key: str, logger: logging.RootLogger):
     video_url_list = []
     for song in song_list:
         try:
             video_id = search_song_yt(query=song, api_key=yt_api_key)
+            video_url_list.append(f"https://www.youtube.com/watch?v={video_id}")
         except Exception as e:
             logger.error(
                 f"Could not download track for {song}, due to the following error:\n{e}"
             )
             continue
-        video_url_list.append(f"https://www.youtube.com/watch?v={video_id}")
     return video_url_list
 
 

@@ -164,14 +164,14 @@ def app(
     )
     stdscr.refresh()
     song_list_y, song_list_x = stdscr.getyx()[0] + 2, 0
-    stdscr.addstr(song_list_y, song_list_x, f"{song_list}")
+    song_list_str = f"Songs recommended by AI: "
+    for i, song in enumerate(song_list):
+        song_list_str = f"{song_list_str}\n\t{i+1}. {song}"
+    stdscr.addstr(song_list_y, song_list_x, song_list_str)
     stdscr.refresh()
     playlist = get_yt_url_list(
         song_list=song_list, yt_api_key=yt_api_key, logger=logger
     )
-    playlist_y, playlist_x = stdscr.getyx()[0] + 2, 0
-    stdscr.addstr(playlist_y, playlist_x, f"{playlist}")
-    stdscr.refresh()
     all_playlist_folder = "codevibe"
     playlist_folder_prefix = "codevibe_playlist_"
     temp_dir = tempfile.gettempdir()
