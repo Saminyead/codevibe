@@ -1,4 +1,5 @@
 from pytubefix import YouTube
+from pytubefix.exceptions import PytubeFixError
 import os
 from datetime import datetime
 
@@ -9,9 +10,7 @@ import logging
 from pathlib import Path
 
 
-def download_track(
-    url: str, dest: str, playlist: list[str], max_retries: int = 3
-):
+def download_track(url: str, dest: str, playlist: list[str], max_retries: int = 3):
     yt = YouTube(url)
     ys = yt.streams.get_audio_only()
     if not ys:
@@ -39,6 +38,7 @@ def search_song_yt(query: str, api_key: str) -> str:
             continue
     raise KeyError
 
+
 def setup_logging(
     log_file: str | Path, log_dir: str | Path = "./logs"
 ) -> logging.RootLogger:
@@ -49,15 +49,43 @@ def setup_logging(
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",
         handlers=[
-            logging.FileHandler(file_path,encoding="utf=8"),
-        ]
+            logging.FileHandler(file_path, encoding="utf=8"),
+        ],
     )
     return logging
 
 
-def check_and_save_api_key(env_var_name:str, env_var_desc:str) -> str:
-        print(f"This program requires an {env_var_desc}.")
-        env_var_value = input(f"Please enter your {env_var_desc} here: ")
-        with open(".env", mode="a", encoding="utf-8") as env_fp:
-            env_fp.write(f"\n{env_var_name}={env_var_value}")
-        return env_var_value
+def check_and_save_api_key(env_var_name: str, env_var_desc: str) -> str:
+    print(f"This program requires an {env_var_desc}.")
+    env_var_value = input(f"Please enter your {env_var_desc} here: ")
+    with open(".env", mode="a", encoding="utf-8") as env_fp:
+        env_fp.write(f"\n{env_var_name}={env_var_value}")
+    return env_var_value
+
+
+def get_yt_url_list(song_list: list[str], yt_api_key: str, logger: logging.RootLogger):
+    video_url_list = []
+    for song in song_list:
+        try:
+            video_id = search_song_yt(query=song, api_key=yt_api_key)
+        except Exception as e:
+            logger.error(
+                f"Could not download track for {song}, due to the following error:\n{e}"
+            )
+            continue
+        video_url_list.append(f"https://www.youtube.com/watch?v={video_id}")
+    return video_url_list
+
+
+def download_tracks_all(
+    url_list: list[str],
+    playlist_folder: str,
+    playlist: list[str],
+    logger: logging.RootLogger,
+):
+    for url in url_list:
+        try:
+            download_track(url=url, dest=playlist_folder, playlist=playlist)
+        except PytubeFixError:
+            logger.error(f"Error downloading track for url {url}")
+            continue

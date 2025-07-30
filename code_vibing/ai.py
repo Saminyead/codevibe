@@ -1,3 +1,11 @@
+from exceptions import AiFormatError
+
+import requests
+import json
+
+from logging import RootLogger
+
+
 SYS_PROMPT = """You are a helpful assistant who will suggest a list of songs
 to be searched on YouTube according to the user's request. If the request isn't
 explicit, suggest based on the user's mood. The number of songs in the list is
@@ -6,7 +14,7 @@ the list should contain 10 songs. Please make sure the output is in a JSON forma
 """
 
 
-OPENROUTER_RESPONSE_FORMAT =  {
+OPENROUTER_RESPONSE_FORMAT = {
     "type": "json_object",
     "json_schema": {
         "name": "search_songs_yt",
@@ -16,14 +24,67 @@ OPENROUTER_RESPONSE_FORMAT =  {
             "properties": {
                 "song_list": {
                     "type": "array",
-                    "items": {
-                            "type": "string"
-                        },
-                    "description": "A list of songs to be searched for on YouTube"
+                    "items": {"type": "string"},
+                    "description": "A list of songs to be searched for on YouTube",
                 }
             },
             "required": ["song_list"],
-            "additionalProperties": False
-        }
-    }
+            "additionalProperties": False,
+        },
+    },
 }
+
+
+def get_ai_song_list(
+    user_input: str,
+    api_key: str,
+    url: str,
+    model: str,
+    logger: RootLogger,
+    sys_prompt: str = SYS_PROMPT,
+    res_format: dict = OPENROUTER_RESPONSE_FORMAT,
+    n_attempts: int = 3,
+) -> list[str]:
+    for attempt in range(n_attempts):  # retry only for AiFormatError
+        res = requests.post(
+            url=url,
+            headers={"Authorization": f"Bearer {api_key}"},
+            json={
+                "model": model,
+                "messages": [
+                    {"role": "system", "content": sys_prompt},
+                    {
+                        "role": "user",
+                        "content": user_input,
+                    },
+                ],
+                "response_format": res_format,
+            },
+        )
+        ai_res = res.json()["choices"][0]["message"]["content"]
+        ai_res_dict = json.loads(ai_res)
+        song_list = ai_res_dict["songs"]
+        if not type(song_list[0]) is str:
+            logger.warning(
+                f"Attempt {attempt + 1} failed for getting AI song list due to AiFormatError"
+            )
+            continue
+        return song_list
+    logger.error("Max retries exceeded for getting AI song list due to AiFormatError.")
+    raise AiFormatError
+
+
+def get_ai_song_list_retry(
+    user_input: str,
+    api_key: str,
+    url: str,
+    model: str,
+    logger: RootLogger,
+):
+    try:
+        return get_ai_song_list(
+            user_input=user_input, api_key=api_key, url=url, model=model, logger=logger
+        )
+    except Exception as e:
+        logger.error(f"Exception occurred with the AI: {e}")
+        raise

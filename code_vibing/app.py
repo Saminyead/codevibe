@@ -1,0 +1,201 @@
+from ai import get_ai_song_list_retry
+import curses
+
+import os
+import vlc
+import threading
+from datetime import datetime
+
+from utils import download_tracks_all, get_yt_url_list
+import tempfile
+
+from logging import RootLogger
+
+
+def get_recommended_song_list(
+    stdscr: curses.window,
+    scr_pos: tuple[int, int],
+    url: str,
+    model: str,
+    ai_api_key: str,
+    logger: RootLogger,
+) -> list[str]:
+    user_input_prompt = "Tell me your vibes for a great list of music: "
+    stdscr.addstr(scr_pos[0], scr_pos[1], user_input_prompt)
+    stdscr.refresh()
+    curses.echo()
+    user_input = stdscr.getstr(scr_pos[0], scr_pos[1] + len(user_input_prompt)).decode()
+    curses.noecho()
+    user_quit = False
+    while not user_quit:
+        try:
+            return get_ai_song_list_retry(
+                user_input=user_input,
+                url=url,
+                api_key=ai_api_key,
+                model=model,
+                logger=logger,
+            )
+        except Exception:
+            error_msg_y = stdscr.getyx()[0] + 2
+            stdscr.addstr(
+                error_msg_y,
+                0,
+                f"""We encountered an error with the AI. Do you wish to retry 
+                prompting the AI? Press y to retry, or any other key to quit 
+                the program.""",
+            )
+            if stdscr.getkey() not in ("y", "Y"):
+                user_quit = True
+                continue
+            stdscr.move(error_msg_y, 0)
+            stdscr.clrtobot()
+    raise
+
+
+def get_api_keys_from_user(
+    stdscr: curses.window,
+    openrouter_api_key: str | None,
+    yt_api_key: str | None,
+) -> dict[str, str]:
+    openrouter_api_key_input = None
+    yt_api_key_input = None
+    if not openrouter_api_key:
+        init_pos = stdscr.getyx()
+        stdscr.addstr(
+            init_pos[0] + 2, 0, "This program requires an Openrouter API KEY."
+        )
+        enter_openrouter_prompt = "Please enter your Openrouter API Key here: "
+        stdscr.addstr(init_pos[0] + 3, 0, enter_openrouter_prompt)
+        curses.echo()
+        openrouter_api_key_input = (
+            stdscr.getstr(init_pos[0] + 3, len(enter_openrouter_prompt))
+            .decode()
+            .strip()
+        )
+        curses.noecho()
+        os.environ["openrouter_api_key"] = openrouter_api_key_input
+        openrouter_api_key = os.environ["openrouter_api_key"]
+    if not yt_api_key:
+        init_pos = stdscr.getyx()
+        stdscr.addstr(
+            init_pos[0] + 2, 0, "This program requires an Google Developer API Key."
+        )
+        enter_yt_prompt = "Please enter your Google Developer API Key here: "
+        stdscr.addstr(init_pos[0] + 3, 0, enter_yt_prompt)
+        curses.echo()
+        yt_api_key_input = (
+            stdscr.getstr(init_pos[0] + 3, len(enter_yt_prompt)).decode().strip()
+        )
+        curses.noecho()
+        os.environ["yt_api_key"] = yt_api_key_input
+        yt_api_key = os.environ["yt_api_key"]
+    stdscr.addstr(
+        stdscr.getyx()[0] + 2,
+        0,
+        "Do you wish to save the API keys? Press y to save, press n to cancel.",
+    )
+    save_status_user_input = stdscr.getkey()
+    if save_status_user_input in ("y", "Y"):
+        env_path = ".env"
+        is_empty = not os.path.exists(env_path) or os.stat(env_path).st_size == 0
+        with open(file=env_path, mode="a") as fp:
+            if is_empty:
+                fp.write("\n")
+            if openrouter_api_key_input:
+                fp.write(f"openrouter_api_key={openrouter_api_key_input}\n")
+            if yt_api_key_input:
+                fp.write(f"yt_api_key={yt_api_key_input}\n")
+    stdscr.clear()
+    return {"openrouter_api_key": openrouter_api_key, "yt_api_key": yt_api_key}
+
+
+def app(
+    stdscr: curses.window,
+    ai_api_key: str | None,
+    yt_api_key: str | None,
+    openrouter_url: str,
+    model: str,
+    logger: RootLogger,
+    init_scr_pos: tuple[int, int] = (0, 0),
+):
+    try:
+        # Windows throws error during the very import of vlc Python package.
+        from player import MusicPlayer
+    except FileNotFoundError:
+        import platform
+
+        bit_version = platform.architecture()[0]
+        stdscr.addstr(
+            0,
+            0,
+            f"""This program requires VLC Media Player to run. Please install
+            VLC Media Player and launch the program again. If it is already 
+            installed make sure it is the {bit_version} version of VLC.""",
+        )
+        stdscr.addstr(stdscr.getyx()[0] + 2, 0, "Press any key to exit.")
+        stdscr.getch()
+        return
+    try:
+        vlc.Instance()
+    except NameError:
+        stdscr.addstr(
+            0,
+            0,
+            """This program requires VLC Media Player to run. Please install
+            VLC Media Player and launch the program again.""",
+        )
+        stdscr.addstr(stdscr.getyx()[0] + 2, 0, "Press any key to exit.")
+        stdscr.getch()
+        return
+    if not ai_api_key or not yt_api_key:
+        api_keys = get_api_keys_from_user(
+            stdscr, openrouter_api_key=ai_api_key, yt_api_key=yt_api_key
+        )
+        ai_api_key = api_keys["openrouter_api_key"]
+        yt_api_key = api_keys["yt_api_key"]
+    song_list = get_recommended_song_list(
+        stdscr,
+        scr_pos=init_scr_pos,
+        ai_api_key=ai_api_key,
+        url=openrouter_url,
+        model=model,
+        logger=logger,
+    )
+    stdscr.refresh()
+    song_list_y, song_list_x = stdscr.getyx()[0] + 2, 0
+    stdscr.addstr(song_list_y, song_list_x, f"{song_list}")
+    stdscr.refresh()
+    playlist = get_yt_url_list(
+        song_list=song_list, yt_api_key=yt_api_key, logger=logger
+    )
+    playlist_y, playlist_x = stdscr.getyx()[0] + 2, 0
+    stdscr.addstr(playlist_y, playlist_x, f"{playlist}")
+    stdscr.refresh()
+    all_playlist_folder = "codevibe"
+    playlist_folder_prefix = "codevibe_playlist_"
+    temp_dir = tempfile.gettempdir()
+    codevibe_folder = f"{temp_dir}/{all_playlist_folder}"
+    if not os.path.exists(codevibe_folder):
+        os.mkdir(codevibe_folder)
+    dt_format = "%Y-%m-%d_%H-%M-%S"
+    date_now = datetime.now().strftime(dt_format)
+    playlist_folder = f"{codevibe_folder}/{playlist_folder_prefix}{date_now}"
+    os.mkdir(playlist_folder)
+    player_init_pos = stdscr.getyx()[0] + 3, 0
+    player = MusicPlayer(
+        playlist_folder=playlist_folder,
+        expected_len=len(playlist),
+        screen=stdscr,
+        screen_init_pos=player_init_pos,
+    )
+    threading.Thread(
+        target=download_tracks_all,
+        kwargs={
+            "url_list": playlist,
+            "playlist_folder": playlist_folder,
+            "playlist": player.playlist,
+            "logger": logger,
+        },
+    ).start()
+    player.play_all_songs()
