@@ -121,23 +121,11 @@ def app(
     logger: RootLogger,
     init_scr_pos: tuple[int, int] = (0, 0),
 ):
-    try:
-        vlc.Instance()
-    except NameError:
-        stdscr.addstr(
-            0,
-            0,
-            """This program requires VLC Media Player to run. Please install
-            VLC Media Player and launch the program again.""",
-        )
-        stdscr.addstr(stdscr.getyx()[0] + 2, 0, "Press any key to exit.")
-        stdscr.getch()
-        return
     # sometimes plugin path not properly detected in Linux
     if sys.platform == "linux":
         check_vlc_plugin_path = subprocess.check_output(
             ["find", "/usr/lib", "-type", "d", "-name", "plugins", "-path", "*/vlc/*"],
-            text=True
+            text=True,
         )
         plugin_path = check_vlc_plugin_path.strip()
         os.environ["VLC_PLUGIN_PATH"] = plugin_path
@@ -155,6 +143,18 @@ def app(
             f"""This program requires VLC Media Player to run. Please install
             VLC Media Player and launch the program again. If it is already 
             installed make sure it is the {bit_version} version of VLC.""",
+        )
+        stdscr.addstr(stdscr.getyx()[0] + 2, 0, "Press any key to exit.")
+        stdscr.getch()
+        return
+    try:
+        vlc.Instance()  # best way to test for Linux
+    except NameError:
+        stdscr.addstr(
+            0,
+            0,
+            """This program requires VLC Media Player to run. Please install
+            VLC Media Player and launch the program again.""",
         )
         stdscr.addstr(stdscr.getyx()[0] + 2, 0, "Press any key to exit.")
         stdscr.getch()
