@@ -4,6 +4,7 @@ import curses
 import os
 import vlc
 import subprocess
+import sys
 import threading
 from datetime import datetime
 
@@ -121,7 +122,28 @@ def app(
     init_scr_pos: tuple[int, int] = (0, 0),
 ):
     try:
-        # Windows throws error during the very import of vlc Python package.
+        vlc.Instance()
+    except NameError:
+        stdscr.addstr(
+            0,
+            0,
+            """This program requires VLC Media Player to run. Please install
+            VLC Media Player and launch the program again.""",
+        )
+        stdscr.addstr(stdscr.getyx()[0] + 2, 0, "Press any key to exit.")
+        stdscr.getch()
+        return
+    # sometimes plugin path not properly detected in Linux
+    if sys.platform == "linux":
+        check_vlc_plugin_path = subprocess.check_output(
+            ["find", "/usr/lib", "-type", "d", "-name", "plugins", "-path", "*/vlc/*"],
+            text=True
+        )
+        plugin_path = check_vlc_plugin_path.strip()
+        os.environ["VLC_PLUGIN_PATH"] = plugin_path
+    # Windows throws error during the very import of vlc Python package
+    # if VLC is not installed
+    try:
         from player import MusicPlayer
     except FileNotFoundError:
         import platform
@@ -137,26 +159,6 @@ def app(
         stdscr.addstr(stdscr.getyx()[0] + 2, 0, "Press any key to exit.")
         stdscr.getch()
         return
-    try:  # for Linux
-        vlc.Instance()
-    except NameError:
-        stdscr.addstr(
-            0,
-            0,
-            """This program requires VLC Media Player to run. Please install
-            VLC Media Player and launch the program again.""",
-        )
-        stdscr.addstr(stdscr.getyx()[0] + 2, 0, "Press any key to exit.")
-        stdscr.getch()
-        return
-    # sometimes plugin path not properly detected in Linux
-    if "VLC_PLUGIN_PATH" not in os.environ:
-        ldconfig_output = subprocess.run(["ldconfig", "-p"], capture_output=True)
-        ldconfig_output_str = ldconfig_output.stdout.decode()
-        plugin_path = [
-            string for string in ldconfig_output_str.split() if r"/libvlc.so" in string
-        ][0]
-        os.environ["VLC_PLUGIN_PATH"] = f"/usr{plugin_path}"
     if not ai_api_key or not yt_api_key:
         api_keys = get_api_keys_from_user(
             stdscr, openrouter_api_key=ai_api_key, yt_api_key=yt_api_key
