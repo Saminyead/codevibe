@@ -28,8 +28,8 @@ def get_recommended_song_list(
     curses.echo()
     user_input = stdscr.getstr(scr_pos[0], scr_pos[1] + len(user_input_prompt)).decode()
     curses.noecho()
-    user_quit = False
-    while not user_quit:
+    error_msg_y = stdscr.getyx()[0] + 2
+    while True:
         try:
             return get_ai_song_list_retry(
                 user_input=user_input,
@@ -39,7 +39,6 @@ def get_recommended_song_list(
                 logger=logger,
             )
         except Exception as e:
-            error_msg_y = stdscr.getyx()[0] + 2
             logger.error(f"Encountered the following error with the AI:\n{e}")
             stdscr.addstr(
                 error_msg_y,
@@ -49,13 +48,10 @@ def get_recommended_song_list(
                 "the program.",
             )
             if stdscr.getkey() not in ("y", "Y"):
-                user_quit = True
-                stdscr.addstr(stdscr.getyx()[0] + 1, 0, "Retrying...")
-                continue
+                raise
             stdscr.move(error_msg_y, 0)
             stdscr.clrtobot()
             stdscr.refresh()
-    raise
 
 
 def get_api_keys_from_user(
