@@ -2,7 +2,6 @@ from ai import get_ai_song_list_retry
 import curses
 
 import os
-import vlc
 import subprocess
 import sys
 import threading
@@ -131,6 +130,7 @@ def app(
     # Windows throws error during the very import of vlc Python package
     # if VLC is not installed
     try:
+        import vlc
         from player import MusicPlayer
     except FileNotFoundError:
         import platform
@@ -139,8 +139,8 @@ def app(
         stdscr.addstr(
             0,
             0,
-            "This program requires VLC Media Player to run. Please install"
-            "VLC Media Player and launch the program again. If it is already"
+            "This program requires VLC Media Player to run. Please install "
+            "VLC Media Player and launch the program again. If it is already "
             f"installed make sure it is the {bit_version} version of VLC.",
         )
         stdscr.addstr(stdscr.getyx()[0] + 2, 0, "Press any key to exit.")
