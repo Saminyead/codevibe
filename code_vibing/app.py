@@ -38,20 +38,23 @@ def get_recommended_song_list(
                 model=model,
                 logger=logger,
             )
-        except Exception:
+        except Exception as e:
             error_msg_y = stdscr.getyx()[0] + 2
+            logger.error(f"Encountered the following error with the AI:\n{e}")
             stdscr.addstr(
                 error_msg_y,
                 0,
-                f"""We encountered an error with the AI. Do you wish to retry 
-                prompting the AI? Press y to retry, or any other key to quit 
-                the program.""",
+                "We encountered an error with the AI. Do you wish to retry" 
+                "prompting the AI? Press y to retry, or any other key to quit"
+                "the program.",
             )
             if stdscr.getkey() not in ("y", "Y"):
                 user_quit = True
+                stdscr.addstr(stdscr.getyx()[0] + 1, 0, "Retrying...")
                 continue
             stdscr.move(error_msg_y, 0)
             stdscr.clrtobot()
+            stdscr.refresh()
     raise
 
 
@@ -140,9 +143,9 @@ def app(
         stdscr.addstr(
             0,
             0,
-            f"""This program requires VLC Media Player to run. Please install
-            VLC Media Player and launch the program again. If it is already 
-            installed make sure it is the {bit_version} version of VLC.""",
+            "This program requires VLC Media Player to run. Please install"
+            "VLC Media Player and launch the program again. If it is already"
+            f"installed make sure it is the {bit_version} version of VLC.",
         )
         stdscr.addstr(stdscr.getyx()[0] + 2, 0, "Press any key to exit.")
         stdscr.getch()
@@ -153,8 +156,8 @@ def app(
         stdscr.addstr(
             0,
             0,
-            """This program requires VLC Media Player to run. Please install
-            VLC Media Player and launch the program again.""",
+            "This program requires VLC Media Player to run. Please install"
+            "VLC Media Player and launch the program again.",
         )
         stdscr.addstr(stdscr.getyx()[0] + 2, 0, "Press any key to exit.")
         stdscr.getch()
@@ -165,14 +168,17 @@ def app(
         )
         ai_api_key = api_keys["openrouter_api_key"]
         yt_api_key = api_keys["yt_api_key"]
-    song_list = get_recommended_song_list(
-        stdscr,
-        scr_pos=init_scr_pos,
-        ai_api_key=ai_api_key,
-        url=openrouter_url,
-        model=model,
-        logger=logger,
-    )
+    try:
+        song_list = get_recommended_song_list(
+            stdscr,
+            scr_pos=init_scr_pos,
+            ai_api_key=ai_api_key,
+            url=openrouter_url,
+            model=model,
+            logger=logger,
+        )
+    except Exception:
+        return
     stdscr.refresh()
     song_list_y, song_list_x = stdscr.getyx()[0] + 2, 0
     song_list_str = f"Songs recommended by AI: "
