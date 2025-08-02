@@ -130,12 +130,14 @@ def app(
     # Windows throws error during the very import of vlc Python package
     # if VLC is not installed
     try:
-        import vlc
         from player import MusicPlayer
-    except FileNotFoundError:
+    # the exception is different when running normally vs frozen.
+    # need to keep an eye out if other kinds of exceptions occur
+    except Exception as e:
         import platform
 
         bit_version = platform.architecture()[0]
+        logger.error(f"The following error occurred while import the VLC package: {e}")
         stdscr.addstr(
             0,
             0,
@@ -147,6 +149,7 @@ def app(
         stdscr.getch()
         return
     try:
+        import vlc
         vlc.Instance()  # best way to test for Linux
     except NameError:
         stdscr.addstr(
