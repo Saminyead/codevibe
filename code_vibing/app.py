@@ -34,9 +34,11 @@ def get_recommended_song_list(
     user_input_prompt = "Tell me your vibes for a great list of music: "
     stdscr.addstr(scr_pos[0], scr_pos[1], user_input_prompt)
     stdscr.refresh()
-    curses.echo()
-    user_input = stdscr.getstr(scr_pos[0], scr_pos[1] + len(user_input_prompt)).decode()
-    curses.noecho()
+    textbox_pos = stdscr.getyx()[0] + 2, 0
+    user_input = get_user_input_textbox(begin_pos=textbox_pos)
+    stdscr.refresh()
+    stdscr.addstr(stdscr.getyx()[0] + 2, 0, user_input)
+    stdscr.refresh()
     error_msg_y = stdscr.getyx()[0] + 2
     while True:
         try:
