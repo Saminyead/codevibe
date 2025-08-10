@@ -1,5 +1,6 @@
 from ai import get_ai_song_list_retry
 import curses
+from curses.textpad import Textbox
 
 import os
 import subprocess
@@ -11,6 +12,15 @@ from utils import download_tracks_all, get_yt_url_list
 import tempfile
 
 from logging import RootLogger
+
+
+def get_user_input_textbox(begin_pos: tuple[int, int]):
+    user_input_win = curses.newwin(3, curses.COLS, begin_pos[0], begin_pos[1])
+    user_input_box = Textbox(win=user_input_win, insert_mode=True)
+    # Enter is not end-of-signal by default
+    # key 7 is Ctrl + G (end-of-signal in curses textbox), 10 is Enter 
+    user_input_box.edit(lambda x: 7 if x==10 else x)
+    return user_input_box.gather()
 
 
 def get_recommended_song_list(
@@ -155,7 +165,7 @@ def app(
         stdscr.addstr(
             0,
             0,
-            "This program requires VLC Media Player to run. Please install"
+            "This program requires VLC Media Player to run. Please install "
             "VLC Media Player and launch the program again.",
         )
         stdscr.addstr(stdscr.getyx()[0] + 2, 0, "Press any key to exit.")
