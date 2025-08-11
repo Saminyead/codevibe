@@ -1,9 +1,7 @@
-from pytubefix import YouTube
+from pytubefix import YouTube, Search
 from pytubefix.exceptions import PytubeFixError
 import os
 from datetime import datetime
-
-import requests
 
 import logging
 
@@ -26,17 +24,12 @@ def find_latest_playlist(playlist_path: str | Path, dt_format: str):
     return max(pl_dt_dict)
 
 
-def search_song_yt(query: str, api_key: str) -> str:
-    url = "https://www.googleapis.com/youtube/v3/search"
-    params = {"key": api_key, "part": "snippet", "q": query}
-    res = requests.get(url=url, params=params)
-    search_items = res.json()["items"]
-    for item in search_items:
-        try:
-            return item["id"]["videoId"]
-        except KeyError:
+def search_song_yt(query: str) -> str:
+    results = Search(query)
+    for result in results.all:
+        if not result.watch_url:
             continue
-    raise KeyError
+        return result.watch_url
 
 
 def setup_logging(
@@ -55,11 +48,11 @@ def setup_logging(
     return logging
 
 
-def get_yt_url_list(song_list: list[str], yt_api_key: str, logger: logging.RootLogger):
+def get_yt_url_list(song_list: list[str], logger: logging.RootLogger):
     video_url_list = []
     for song in song_list:
         try:
-            video_id = search_song_yt(query=song, api_key=yt_api_key)
+            video_id = search_song_yt(query=song)
             video_url_list.append(f"https://www.youtube.com/watch?v={video_id}")
         except Exception as e:
             logger.error(

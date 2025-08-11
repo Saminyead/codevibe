@@ -68,10 +68,8 @@ def get_recommended_song_list(
 def get_api_keys_from_user(
     stdscr: curses.window,
     openrouter_api_key: str | None,
-    yt_api_key: str | None,
-) -> dict[str, str]:
+) -> str:
     openrouter_api_key_input = None
-    yt_api_key_input = None
     if not openrouter_api_key:
         init_pos = stdscr.getyx()
         stdscr.addstr(
@@ -88,44 +86,27 @@ def get_api_keys_from_user(
         curses.noecho()
         os.environ["openrouter_api_key"] = openrouter_api_key_input
         openrouter_api_key = os.environ["openrouter_api_key"]
-    if not yt_api_key:
-        init_pos = stdscr.getyx()
-        stdscr.addstr(
-            init_pos[0] + 2, 0, "This program requires an Google Developer API Key."
-        )
-        enter_yt_prompt = "Please enter your Google Developer API Key here: "
-        stdscr.addstr(init_pos[0] + 3, 0, enter_yt_prompt)
-        curses.echo()
-        yt_api_key_input = (
-            stdscr.getstr(init_pos[0] + 3, len(enter_yt_prompt)).decode().strip()
-        )
-        curses.noecho()
-        os.environ["yt_api_key"] = yt_api_key_input
-        yt_api_key = os.environ["yt_api_key"]
     stdscr.addstr(
         stdscr.getyx()[0] + 2,
         0,
-        "Do you wish to save the API keys? Press y to save, press n to cancel.",
+        "Do you wish to save the API key? Press y to save, press n to cancel.",
     )
     save_status_user_input = stdscr.getkey()
     if save_status_user_input in ("y", "Y"):
         env_path = ".env"
         is_empty = not os.path.exists(env_path) or os.stat(env_path).st_size == 0
         with open(file=env_path, mode="a") as fp:
-            if is_empty:
+            if not is_empty:
                 fp.write("\n")
             if openrouter_api_key_input:
-                fp.write(f"openrouter_api_key={openrouter_api_key_input}\n")
-            if yt_api_key_input:
-                fp.write(f"yt_api_key={yt_api_key_input}\n")
+                fp.write(f"openrouter_api_key={openrouter_api_key}\n")
     stdscr.clear()
-    return {"openrouter_api_key": openrouter_api_key, "yt_api_key": yt_api_key}
+    return openrouter_api_key
 
 
 def app(
     stdscr: curses.window,
     ai_api_key: str | None,
-    yt_api_key: str | None,
     openrouter_url: str,
     model: str,
     logger: RootLogger,
@@ -173,12 +154,10 @@ def app(
         stdscr.addstr(stdscr.getyx()[0] + 2, 0, "Press any key to exit.")
         stdscr.getch()
         return
-    if not ai_api_key or not yt_api_key:
-        api_keys = get_api_keys_from_user(
-            stdscr, openrouter_api_key=ai_api_key, yt_api_key=yt_api_key
+    if not ai_api_key:
+        ai_api_key = get_api_keys_from_user(
+            stdscr, openrouter_api_key=ai_api_key,
         )
-        ai_api_key = api_keys["openrouter_api_key"]
-        yt_api_key = api_keys["yt_api_key"]
     try:
         song_list = get_recommended_song_list(
             stdscr,
@@ -198,7 +177,7 @@ def app(
     stdscr.addstr(song_list_y, song_list_x, song_list_str)
     stdscr.refresh()
     playlist = get_yt_url_list(
-        song_list=song_list, yt_api_key=yt_api_key, logger=logger
+        song_list=song_list, logger=logger
     )
     all_playlist_folder = "codevibe"
     playlist_folder_prefix = "codevibe_playlist_"
