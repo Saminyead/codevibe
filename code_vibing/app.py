@@ -23,6 +23,24 @@ def get_user_input_textbox(begin_pos: tuple[int, int]):
     return user_input_box.gather()
 
 
+def get_n_songs_from_user(stdscr:curses.window, n_songs: int = 5):
+    n_songs_prompt = (
+        "How many songs do you want in the playlist? " 
+        "Enter a number (default = 5) "
+    )
+    prompt_pos = stdscr.getyx()[0] + 2, 0
+    stdscr.addstr(prompt_pos[0], prompt_pos[1], n_songs_prompt)
+    stdscr.refresh()
+    curses.echo()
+    n_songs_str = stdscr.getstr()
+    curses.noecho()
+    stdscr.refresh()
+    try:
+        return int(n_songs_str)
+    except ValueError:
+        return n_songs
+
+
 def get_recommended_song_list(
     stdscr: curses.window,
     scr_pos: tuple[int, int],
@@ -31,7 +49,7 @@ def get_recommended_song_list(
     ai_api_key: str,
     logger: RootLogger,
 ) -> list[str]:
-    user_input_prompt = "Tell me your vibes for a great list of music: "
+    user_input_prompt = "Tell me your vibes below for a great list of music: "
     stdscr.addstr(scr_pos[0], scr_pos[1], user_input_prompt)
     stdscr.refresh()
     textbox_pos = stdscr.getyx()[0] + 2, 0
@@ -39,6 +57,7 @@ def get_recommended_song_list(
     stdscr.refresh()
     stdscr.addstr(stdscr.getyx()[0] + 2, 0, user_input)
     stdscr.refresh()
+    n_songs = get_n_songs_from_user(stdscr)
     error_msg_y = stdscr.getyx()[0] + 2
     while True:
         try:
@@ -48,6 +67,7 @@ def get_recommended_song_list(
                 api_key=ai_api_key,
                 model=model,
                 logger=logger,
+                n_songs=n_songs
             )
         except Exception as e:
             logger.error(f"Encountered the following error with the AI:\n{e}")

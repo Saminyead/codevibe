@@ -6,6 +6,15 @@ import json
 from logging import RootLogger
 
 
+def sys_prompt(n_songs: int = 5):
+    return (
+        "You are a helpful assistant who will suggest a list of songs to be "
+        "searched on YouTube according to the user's request. If the request isn't "
+        "explicit, suggest based on the user's mood. The number of songs in the "
+        f"list should be {n_songs}. Please make sure the output is in a JSON format."
+    )
+
+
 SYS_PROMPT = """You are a helpful assistant who will suggest a list of songs
 to be searched on YouTube according to the user's request. If the request isn't
 explicit, suggest based on the user's mood. The number of songs in the list is
@@ -41,7 +50,7 @@ def get_ai_song_list(
     url: str,
     model: str,
     logger: RootLogger,
-    sys_prompt: str = SYS_PROMPT,
+    n_songs: int = 3,
     res_format: dict = OPENROUTER_RESPONSE_FORMAT,
     n_attempts: int = 3,
 ) -> list[str]:
@@ -52,7 +61,7 @@ def get_ai_song_list(
             json={
                 "model": model,
                 "messages": [
-                    {"role": "system", "content": sys_prompt},
+                    {"role": "system", "content": sys_prompt(n_songs)},
                     {
                         "role": "user",
                         "content": user_input,
@@ -80,10 +89,16 @@ def get_ai_song_list_retry(
     url: str,
     model: str,
     logger: RootLogger,
+    n_songs: int = 5,
 ):
     try:
         return get_ai_song_list(
-            user_input=user_input, api_key=api_key, url=url, model=model, logger=logger
+            user_input=user_input,
+            api_key=api_key,
+            url=url,
+            model=model,
+            logger=logger,
+            n_songs=n_songs
         )
     except Exception as e:
         logger.error(f"Exception occurred with the AI: {e}")
