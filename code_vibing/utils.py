@@ -52,8 +52,8 @@ def get_yt_url_list(song_list: list[str], logger: logging.RootLogger):
     video_url_list = []
     for song in song_list:
         try:
-            video_id = search_song_yt(query=song)
-            video_url_list.append(f"https://www.youtube.com/watch?v={video_id}")
+            video_url = search_song_yt(query=song)
+            video_url_list.append(video_url)
         except Exception as e:
             logger.error(
                 f"Could not download track for {song}, due to the following error:\n{e}"
