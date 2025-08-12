@@ -10,16 +10,16 @@ def sys_prompt(n_songs: int = 5):
     return (
         "You are a helpful assistant who will suggest a list of songs to be "
         "searched on YouTube according to the user's request. If the request isn't "
-        "explicit, suggest based on the user's mood. The number of songs in the "
-        f"list should be {n_songs}. Please make sure the output is in a JSON format."
+        f"explicit, suggest based on the user's mood. Please suggest {n_songs} songs. "
+        "Please make sure the output is in a JSON format."
     )
 
 
 SYS_PROMPT = """You are a helpful assistant who will suggest a list of songs
 to be searched on YouTube according to the user's request. If the request isn't
 explicit, suggest based on the user's mood. The number of songs in the list is
-to be determined from the user's request. If the user has not specified a number,
-the list should contain 10 songs. Please make sure the output is in a JSON format.
+to be determined from the user's request.Please make sure the output is in a 
+JSON format.
 """
 
 
@@ -50,7 +50,8 @@ def get_ai_song_list(
     url: str,
     model: str,
     logger: RootLogger,
-    n_songs: int = 3,
+    n_songs: int = 5,
+    sys_prompt: str = SYS_PROMPT,
     res_format: dict = OPENROUTER_RESPONSE_FORMAT,
     n_attempts: int = 3,
 ) -> list[str]:
@@ -61,10 +62,10 @@ def get_ai_song_list(
             json={
                 "model": model,
                 "messages": [
-                    {"role": "system", "content": sys_prompt(n_songs)},
+                    {"role": "system", "content": sys_prompt},
                     {
                         "role": "user",
-                        "content": user_input,
+                        "content": f"{user_input} Please suggest {n_songs}.",
                     },
                 ],
                 "response_format": res_format,
