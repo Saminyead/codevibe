@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "code_vibing"
-version = "0.0.1"
+version = "0.1.0"
 dependencies = [
     "python-vlc",
 	"pytubefix",
