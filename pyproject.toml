@@ -4,6 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "code_vibing"
+readme = "README.md"
+authors = [
+	{name = "Samin Yead", email = "Saminyead@gmail.com"}
+]
 version = "0.1.0"
 dependencies = [
     "python-vlc",
