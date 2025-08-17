@@ -71,7 +71,7 @@ def get_ai_song_list(
                 "response_format": res_format,
             },
         )
-        logger.info(f"Response from AI:\n{res.content.decode()}")
+        logger.info(f"Response from AI:\n{res.content.decode().strip()}")
         ai_res = res.json()["choices"][0]["message"]["content"]
         ai_res_dict = json.loads(ai_res)
         song_list = ai_res_dict["song_list"]
