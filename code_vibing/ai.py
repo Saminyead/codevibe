@@ -11,7 +11,7 @@ def sys_prompt(n_songs: int = 5):
         "You are a helpful assistant who will suggest a list of songs to be "
         "searched on YouTube according to the user's request. If the request isn't "
         f"explicit, suggest based on the user's mood. Please suggest {n_songs} songs. "
-        "Please make sure the output is in a JSON format."
+        "Please make sure the output adheres strictly to the specified JSON format."
     )
 
 
@@ -24,7 +24,7 @@ JSON format.
 
 
 OPENROUTER_RESPONSE_FORMAT = {
-    "type": "json_object",
+    "type": "json_schema",
     "json_schema": {
         "name": "search_songs_yt",
         "strict": True,
@@ -74,7 +74,7 @@ def get_ai_song_list(
         logger.info(f"Response from AI:\n{res.content.decode()}")
         ai_res = res.json()["choices"][0]["message"]["content"]
         ai_res_dict = json.loads(ai_res)
-        song_list = ai_res_dict["songs"]
+        song_list = ai_res_dict["song_list"]
         if not type(song_list[0]) is str:
             logger.warning(
                 f"Attempt {attempt + 1} failed for getting AI song list due to AiFormatError"
