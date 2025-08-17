@@ -8,7 +8,7 @@ import sys
 import threading
 from datetime import datetime
 
-from utils import download_tracks_all, get_yt_url_list
+from utils import download_tracks_all, get_yt_obj_list
 import tempfile
 
 from logging import RootLogger
@@ -196,7 +196,7 @@ def app(
         song_list_str = f"{song_list_str}\n\t{i+1}. {song}"
     stdscr.addstr(song_list_y, song_list_x, song_list_str)
     stdscr.refresh()
-    playlist = get_yt_url_list(
+    playlist = get_yt_obj_list(
         song_list=song_list, logger=logger
     )
     all_playlist_folder = "codevibe"
@@ -219,7 +219,7 @@ def app(
     threading.Thread(
         target=download_tracks_all,
         kwargs={
-            "url_list": playlist,
+            "yt_list": playlist,
             "playlist_folder": playlist_folder,
             "playlist": player.playlist,
             "logger": logger,

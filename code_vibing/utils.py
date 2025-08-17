@@ -8,8 +8,7 @@ import logging
 from pathlib import Path
 
 
-def download_track(url: str, dest: str, playlist: list[str], max_retries: int = 3):
-    yt = YouTube(url)
+def download_track(yt:YouTube, dest: str, playlist: list[str], max_retries: int = 3):
     ys = yt.streams.get_audio_only()
     if not ys:
         raise Exception(f"Error finding audio for {yt.title}")
@@ -24,12 +23,12 @@ def find_latest_playlist(playlist_path: str | Path, dt_format: str):
     return max(pl_dt_dict)
 
 
-def search_song_yt(query: str) -> str:
+def search_song_yt(query: str) -> YouTube:
     results = Search(query)
     for result in results.all:
         if not result.watch_url:
             continue
-        return result.watch_url
+        return result
 
 
 def setup_logging(
@@ -48,29 +47,29 @@ def setup_logging(
     return logging
 
 
-def get_yt_url_list(song_list: list[str], logger: logging.RootLogger):
-    video_url_list = []
+def get_yt_obj_list(song_list: list[str], logger: logging.RootLogger):
+    yt_obj_list = []
     for song in song_list:
         try:
-            video_url = search_song_yt(query=song)
-            video_url_list.append(video_url)
+            yt_obj = search_song_yt(query=song)
+            yt_obj_list.append(yt_obj)
         except Exception as e:
             logger.error(
                 f"Could not download track for {song}, due to the following error:\n{e}"
             )
             continue
-    return video_url_list
+    return yt_obj_list
 
 
 def download_tracks_all(
-    url_list: list[str],
+    yt_list: list[YouTube],
     playlist_folder: str,
     playlist: list[str],
     logger: logging.RootLogger,
 ):
-    for url in url_list:
+    for yt in yt_list:
         try:
-            download_track(url=url, dest=playlist_folder, playlist=playlist)
+            download_track(yt=yt, dest=playlist_folder, playlist=playlist)
         except PytubeFixError:
-            logger.error(f"Error downloading track for url {url}")
+            logger.error(f"Error downloading track for url {yt.watch_url}")
             continue
