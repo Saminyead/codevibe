@@ -74,8 +74,8 @@ def get_recommended_song_list(
             stdscr.addstr(
                 error_msg_y,
                 0,
-                "We encountered an error with the AI. Do you wish to retry" 
-                "prompting the AI? Press y to retry, or any other key to quit"
+                "We encountered an error with the AI. Do you wish to retry " 
+                "prompting the AI? Press y to retry, or any other key to quit "
                 "the program.",
             )
             if stdscr.getkey() not in ("y", "Y"):
