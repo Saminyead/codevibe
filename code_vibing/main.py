@@ -3,8 +3,6 @@ import curses
 import os
 from dotenv import load_dotenv
 
-import toml
-
 from app import app
 from utils import get_ai_model, setup_logging
 import functools

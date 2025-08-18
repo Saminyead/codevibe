@@ -82,9 +82,9 @@ def get_ai_model(config_path:str, default_model:str):
         return default_model
     with open("config.toml", "r") as fp:
         config_str = fp.read()
-    config = toml.loads(config_str)
     try:
+        config = toml.loads(config_str)
         model = config['ai']['model'] if config['ai']['model'] else default_model
-    except KeyError:
+    except (KeyError, toml.decoder.TomlDecodeError):
         model = default_model
     return model
