@@ -8,8 +8,9 @@ readme = "README.md"
 authors = [
 	{name = "Samin Yead", email = "Saminyead@gmail.com"}
 ]
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
+	"toml",
     "python-vlc",
 	"pytubefix",
     'importlib-metadata; python_version>="3.11"',
