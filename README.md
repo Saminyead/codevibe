@@ -51,19 +51,19 @@ double-click on the `codevibe.exe` file, and the app will open in a new command
 prompt window. From there just follow the on-screen instruction. Note, you will
 need the Openrouter API key you saved previously.
 
-### A Note About the AI Model
+### Choose Your Own AI Model
 This app uses the **Mistral Small 3.2 24B** model from Mistral AI for the AI
-model. While Openrouter allows the use of a variety of other models, this model
-was chosen as it was a reliable free model. For now, there is no way to select
-other AI models from within the app, as the model is hardcoded right now. I
-will add support to select other models, including paid models as well, in the
-future. Right now, if you want to change the model, you will need to:   
+model by default. Openrouter lets you choose from a variety of other AI as well
+including a number of other free models. To specify a model of your own choice:   
 
-- modify the source code 
-- compile the program yourself (or simply run it using Python).
-
-The instructions for that is given below.
-
+1. Go to the Openrouter [models](https://openrouter.ai/models) page.
+2. Search for your preferred model, and click on the "Copy model id" icon. It
+   is usually a small clipboard icon beside the model name. 
+3. In the codevibe folder (where `codevibe` executable is), you will see a file
+   named "config.toml" Open the file, and in the "model" field under the "ai"
+   section, paste the value you just copied from the openrouter models page
+   between the `""` quotation marks. 
+4. Now when you run codevibe, it will run using your specified model.
 
 ### How to Run/Build from Source Code
 - Ensure you have Python version 3.11 or later, and VLC Media Player installed
