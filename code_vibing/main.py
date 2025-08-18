@@ -6,9 +6,10 @@ from dotenv import load_dotenv
 import toml
 
 from app import app
-from utils import setup_logging
+from utils import get_ai_model, setup_logging
 import functools
 
+CONFIG_FILE = "config.toml"
 
 MODEL = "mistralai/mistral-small-3.2-24b-instruct:free"
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
@@ -20,10 +21,7 @@ OPENROUTER_API_KEY = os.getenv("openrouter_api_key")
 
 
 def main():
-    with open("config.toml", "r") as fp:
-        config_str = fp.read()
-    config = toml.loads(config_str)
-    model = config['ai']['model'] if config['ai']['model'] else MODEL
+    model = get_ai_model(config_path=CONFIG_FILE, default_model=MODEL)
     app_def_args = functools.partial(
         app,
         model=model,

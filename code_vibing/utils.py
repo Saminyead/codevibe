@@ -7,6 +7,8 @@ import logging
 
 from pathlib import Path
 
+import toml
+
 
 def download_track(yt:YouTube, dest: str, playlist: list[str], max_retries: int = 3):
     ys = yt.streams.get_audio_only()
@@ -73,3 +75,16 @@ def download_tracks_all(
         except PytubeFixError:
             logger.error(f"Error downloading track for url {yt.watch_url}")
             continue
+
+
+def get_ai_model(config_path:str, default_model:str):
+    if not os.path.exists(config_path):
+        return default_model
+    with open("config.toml", "r") as fp:
+        config_str = fp.read()
+    config = toml.loads(config_str)
+    try:
+        model = config['ai']['model'] if config['ai']['model'] else default_model
+    except KeyError:
+        model = default_model
+    return model
