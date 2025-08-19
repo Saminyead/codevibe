@@ -57,13 +57,17 @@ model by default. Openrouter lets you choose from a variety of other AI as well
 including a number of other free models. To specify a model of your own choice:   
 
 1. Go to the Openrouter [models](https://openrouter.ai/models) page.
-2. Search for your preferred model, and click on the "Copy model id" icon. It
-   is usually a small clipboard icon beside the model name. 
-3. In the codevibe folder (where `codevibe` executable is), you will see a file
+2. Search for your preferred model, and make sure the model you have chosen
+   have the "structured outputs" capabilities. In the models page, check under
+   the "Supported Parameters" section and click on "structured_outputs". 
+3. Once you have selected your preferred model, click on the "Copy model id"
+   icon beside the model name. It is usually a small clipboard icon beside the
+   model name. 
+4. In the codevibe folder (where `codevibe` executable is), you will see a file
    named "config.toml" Open the file, and in the "model" field under the "ai"
    section, paste the value you just copied from the openrouter models page
    between the `""` quotation marks. 
-4. Now when you run codevibe, it will run using your specified model.
+5. Now when you run codevibe, it will run using your specified model.
 
 ### How to Run/Build from Source Code
 - Ensure you have Python version 3.11 or later, and VLC Media Player installed
