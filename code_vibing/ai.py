@@ -100,7 +100,7 @@ def get_ai_song_list_retry(
             url=url,
             model=model,
             logger=logger,
-            n_songs=n_songs
+            n_songs=n_songs,
         )
     except Exception as e:
         logger.error(f"Exception occurred with the AI: {e}")

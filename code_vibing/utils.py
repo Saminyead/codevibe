@@ -10,7 +10,7 @@ from pathlib import Path
 import toml
 
 
-def download_track(yt:YouTube, dest: str, playlist: list[str], max_retries: int = 3):
+def download_track(yt: YouTube, dest: str, playlist: list[str], max_retries: int = 3):
     ys = yt.streams.get_audio_only()
     if not ys:
         raise Exception(f"Error finding audio for {yt.title}")
@@ -77,14 +77,14 @@ def download_tracks_all(
             continue
 
 
-def get_ai_model(config_path:str, default_model:str):
+def get_ai_model(config_path: str, default_model: str):
     if not os.path.exists(config_path):
         return default_model
     with open("config.toml", "r") as fp:
         config_str = fp.read()
     try:
         config = toml.loads(config_str)
-        model = config['ai']['model'] if config['ai']['model'] else default_model
+        model = config["ai"]["model"] if config["ai"]["model"] else default_model
     except (KeyError, toml.decoder.TomlDecodeError):
         model = default_model
     return model

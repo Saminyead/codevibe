@@ -38,8 +38,12 @@ class MusicPlayer:
             ".": self.ff_flag.set,
             ",": self.rew_flag.set,
             "x": self.stop_flag.set,
-            "+": lambda: self.player.audio_set_volume(self.player.audio_get_volume() + 5),
-            "-": lambda: self.player.audio_set_volume(self.player.audio_get_volume() - 5)
+            "+": lambda: self.player.audio_set_volume(
+                self.player.audio_get_volume() + 5
+            ),
+            "-": lambda: self.player.audio_set_volume(
+                self.player.audio_get_volume() - 5
+            ),
         }
 
     def _get_elapsed_time(self):

@@ -18,15 +18,14 @@ def get_user_input_textbox(begin_pos: tuple[int, int]):
     user_input_win = curses.newwin(3, curses.COLS, begin_pos[0], begin_pos[1])
     user_input_box = Textbox(win=user_input_win, insert_mode=True)
     # Enter is not end-of-signal by default
-    # key 7 is Ctrl + G (end-of-signal in curses textbox), 10 is Enter 
-    user_input_box.edit(lambda x: 7 if x==10 else x)
+    # key 7 is Ctrl + G (end-of-signal in curses textbox), 10 is Enter
+    user_input_box.edit(lambda x: 7 if x == 10 else x)
     return user_input_box.gather()
 
 
-def get_n_songs_from_user(stdscr:curses.window, n_songs: int = 5):
+def get_n_songs_from_user(stdscr: curses.window, n_songs: int = 5):
     n_songs_prompt = (
-        "How many songs do you want in the playlist? " 
-        "Enter a number (default = 5) "
+        "How many songs do you want in the playlist? " "Enter a number (default = 5) "
     )
     prompt_pos = stdscr.getyx()[0] + 2, 0
     stdscr.addstr(prompt_pos[0], prompt_pos[1], n_songs_prompt)
@@ -67,14 +66,14 @@ def get_recommended_song_list(
                 api_key=ai_api_key,
                 model=model,
                 logger=logger,
-                n_songs=n_songs
+                n_songs=n_songs,
             )
         except Exception as e:
             logger.error(f"Encountered the following error with the AI:\n{e}")
             stdscr.addstr(
                 error_msg_y,
                 0,
-                "We encountered an error with the AI. Do you wish to retry " 
+                "We encountered an error with the AI. Do you wish to retry "
                 "prompting the AI? Press y to retry, or any other key to quit "
                 "the program.",
             )
@@ -163,6 +162,7 @@ def app(
         return
     try:
         import vlc
+
         vlc.Instance()  # best way to test for Linux
     except NameError:
         stdscr.addstr(
@@ -176,7 +176,8 @@ def app(
         return
     if not ai_api_key:
         ai_api_key = get_api_keys_from_user(
-            stdscr, openrouter_api_key=ai_api_key,
+            stdscr,
+            openrouter_api_key=ai_api_key,
         )
     try:
         song_list = get_recommended_song_list(
@@ -196,9 +197,7 @@ def app(
         song_list_str = f"{song_list_str}\n\t{i+1}. {song}"
     stdscr.addstr(song_list_y, song_list_x, song_list_str)
     stdscr.refresh()
-    playlist = get_yt_obj_list(
-        song_list=song_list, logger=logger
-    )
+    playlist = get_yt_obj_list(song_list=song_list, logger=logger)
     all_playlist_folder = "codevibe"
     playlist_folder_prefix = "codevibe_playlist_"
     temp_dir = tempfile.gettempdir()
