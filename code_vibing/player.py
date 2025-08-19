@@ -38,6 +38,8 @@ class MusicPlayer:
             ".": self.ff_flag.set,
             ",": self.rew_flag.set,
             "x": self.stop_flag.set,
+            "+": lambda: self.player.audio_set_volume(self.player.audio_get_volume() + 5),
+            "-": lambda: self.player.audio_set_volume(self.player.audio_get_volume() - 5)
         }
 
     def _get_elapsed_time(self):
@@ -59,6 +61,11 @@ class MusicPlayer:
         elapsed_time = self._get_elapsed_time()
         pos_y, pos_x = scr_pos
         self.screen.addstr(pos_y, pos_x, elapsed_time)
+
+    def show_volume(self, scr_pos: tuple[int, int]):
+        volume = self.player.audio_get_volume()
+        volume_str = f"Volume - {volume} %"
+        self.screen.addstr(scr_pos[0], scr_pos[1], volume_str)
 
     def next_track(self):
         self.player.stop()
@@ -89,7 +96,9 @@ class MusicPlayer:
             < - go to previous track
             . - ff by 10 seconds
             , - rewind by 10 seconds
-            x - quit player"""
+            x - quit player
+            + - volume up
+            - - volume down"""
         pos_y, pos_x = self.screen_init_pos
         self.screen.addstr(pos_y, pos_x, cmds)
 
@@ -98,13 +107,13 @@ class MusicPlayer:
             cmd = self.screen.getkey()
             if cmd in self.playback_cmds:
                 self.playback_cmds[cmd]()
-            else:
-                continue
+            continue
 
     def monitor_playback(self, elapsed_time_pos: tuple[int, int]):
         while self.player.get_state() != vlc.State.Ended:
             time.sleep(0.2)
             self.show_elapsed_time(scr_pos=elapsed_time_pos)
+            self.show_volume(scr_pos=(elapsed_time_pos[0] + 2, 0))
             self.screen.refresh()
             if self.next_flag.is_set():
                 self.next_track()
