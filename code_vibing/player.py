@@ -67,9 +67,12 @@ class MusicPlayer:
         self.screen.addstr(pos_y, pos_x, elapsed_time)
 
     def show_volume(self, scr_pos: tuple[int, int]):
+        pos_y, pos_x = scr_pos
         volume = self.player.audio_get_volume()
-        volume_str = f"Volume - {volume} %"
-        self.screen.addstr(scr_pos[0], scr_pos[1], volume_str)
+        volume_str = f"Volume - {volume}%"
+        self.screen.move(pos_y, pos_x)
+        self.screen.clrtoeol()
+        self.screen.addstr(pos_y, pos_x, volume_str)
 
     def next_track(self):
         self.player.stop()
