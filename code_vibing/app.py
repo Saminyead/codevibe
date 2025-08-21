@@ -208,7 +208,7 @@ def app(
     dt_format = "%Y-%m-%d_%H-%M-%S"
     date_now = datetime.now().strftime(dt_format)
     playlist_dir_name = f"{playlist_folder_prefix}{date_now}"
-    playlist_folder = f"{codevibe_folder}/{playlist_folder_prefix}{date_now}"
+    playlist_folder = f"{codevibe_folder}/{playlist_dir_name}"
     save_playlist(
         playlist_dir_name=playlist_dir_name,
         playlist_dir=codevibe_folder,

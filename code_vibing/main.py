@@ -12,7 +12,7 @@ CONFIG_FILE = "config.toml"
 MODEL = "mistralai/mistral-small-3.2-24b-instruct:free"
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
-SAVE_PLAYLIST_DIR = f"{os.path.expanduser('~user')}/codevibe"
+SAVE_PLAYLIST_DIR = f"{os.path.expanduser('~')}/codevibe"
 
 LOGGER = setup_logging("app.log", "./logs")
 
