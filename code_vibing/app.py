@@ -13,6 +13,9 @@ import tempfile
 
 from logging import RootLogger
 
+from save import save_playlist
+from pathlib import Path
+
 
 def get_user_input_textbox(begin_pos: tuple[int, int]):
     user_input_win = curses.newwin(3, curses.COLS, begin_pos[0], begin_pos[1])
@@ -128,6 +131,7 @@ def app(
     ai_api_key: str | None,
     openrouter_url: str,
     model: str,
+    save_playlist_dir: str | Path,
     logger: RootLogger,
     init_scr_pos: tuple[int, int] = (0, 0),
 ):
@@ -202,11 +206,19 @@ def app(
     playlist_folder_prefix = "codevibe_playlist_"
     temp_dir = tempfile.gettempdir()
     codevibe_folder = f"{temp_dir}/{all_playlist_folder}"
-    if not os.path.exists(codevibe_folder):
-        os.mkdir(codevibe_folder)
     dt_format = "%Y-%m-%d_%H-%M-%S"
     date_now = datetime.now().strftime(dt_format)
+    playlist_dir_name = f"{playlist_folder_prefix}{date_now}"
     playlist_folder = f"{codevibe_folder}/{playlist_folder_prefix}{date_now}"
+    save_playlist(
+        playlist_dir_name=playlist_dir_name,
+        playlist_dir=codevibe_folder,
+        save_dir=save_playlist_dir,
+        stdscr=stdscr,
+        scr_pos=(stdscr.getyx()[0], 0)
+    )
+    if not os.path.exists(codevibe_folder):
+        os.mkdir(codevibe_folder)
     os.mkdir(playlist_folder)
     player_init_pos = stdscr.getyx()[0] + 3, 0
     player = MusicPlayer(

@@ -1,2 +1,5 @@
 [ai]
 model=""
+
+[directories]
+save_dir=""

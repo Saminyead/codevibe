@@ -1,21 +1,21 @@
 import shutil
 import curses
-
 import os
 
 from pathlib import Path
 
+
 def save_playlist(
     playlist_dir_name: str | Path,
     playlist_dir: str | Path,
-    save_dir:str | Path,
+    save_dir: str | Path,
     stdscr: curses.window,
-    scr_pos: tuple[int, int]
+    scr_pos: tuple[int, int],
 ):
     stdscr.addstr(
         scr_pos[0],
         scr_pos[1],
-        "Do you want to save this playlist? Press y to save, n to cancel. "
+        "Do you want to save this playlist? Press y to save, n to cancel. ",
     )
     key = stdscr.getkey()
     if key not in ("y", "Y"):
@@ -27,7 +27,7 @@ def save_playlist(
             scr_pos[1],
             "The playlist already exists. Do you want to overwrite it, or save "
             "to a new directory? Press y to overwrite, n to save it to a new "
-            "directory, or any other key to cancel."
+            "directory, or any other key to cancel.",
         )
     key = stdscr.getkey()
     if key not in ("y", "Y", "n", "N"):
