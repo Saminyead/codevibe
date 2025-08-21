@@ -77,14 +77,25 @@ def download_tracks_all(
             continue
 
 
-def get_ai_model(config_path: str, default_model: str):
+def read_toml_ok(config_path: str | Path) -> dict | None:
+    """Checks if the toml file is okay. If okay, then returns the toml 
+    contents as dict."""
     if not os.path.exists(config_path):
-        return default_model
-    with open("config.toml", "r") as fp:
+        return
+    with open(config_path, "r") as fp:
         config_str = fp.read()
     try:
-        config = toml.loads(config_str)
+        return toml.loads(config_str)
+    except (toml.decoder.TomlDecodeError):
+        return
+
+
+def get_ai_model(config_path: str | Path, default_model: str):
+    config = read_toml_ok(config_path=config_path)
+    if not config:
+        return default_model
+    try:
         model = config["ai"]["model"] if config["ai"]["model"] else default_model
-    except (KeyError, toml.decoder.TomlDecodeError):
+    except (KeyError):
         model = default_model
     return model

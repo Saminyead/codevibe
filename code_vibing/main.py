@@ -4,7 +4,7 @@ import os
 from dotenv import load_dotenv
 
 from app import app
-from utils import get_ai_model, setup_logging
+from utils import setup_logging, read_toml_ok
 import functools
 
 CONFIG_FILE = "config.toml"
@@ -19,7 +19,14 @@ OPENROUTER_API_KEY = os.getenv("openrouter_api_key")
 
 
 def main():
-    model = get_ai_model(config_path=CONFIG_FILE, default_model=MODEL)
+    config = read_toml_ok(config_path=CONFIG_FILE)
+    if not config:
+        model = MODEL
+    else:
+        try:
+            model = config["ai"]["model"]
+        except KeyError:
+            model = MODEL
     app_def_args = functools.partial(
         app,
         model=model,
