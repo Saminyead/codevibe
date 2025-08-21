@@ -201,7 +201,6 @@ def app(
         song_list_str = f"{song_list_str}\n\t{i+1}. {song}"
     stdscr.addstr(song_list_y, song_list_x, song_list_str)
     stdscr.refresh()
-    playlist = get_yt_obj_list(song_list=song_list, logger=logger)
     all_playlist_folder = "codevibe"
     playlist_folder_prefix = "codevibe_playlist_"
     temp_dir = tempfile.gettempdir()
@@ -215,10 +214,11 @@ def app(
         playlist_dir=codevibe_folder,
         save_dir=save_playlist_dir,
         stdscr=stdscr,
-        scr_pos=(stdscr.getyx()[0], 0)
+        scr_pos=(stdscr.getyx()[0] + 2, 0)
     )
     if not os.path.exists(codevibe_folder):
         os.mkdir(codevibe_folder)
+    playlist = get_yt_obj_list(song_list=song_list, logger=logger)
     os.mkdir(playlist_folder)
     player_init_pos = stdscr.getyx()[0] + 3, 0
     player = MusicPlayer(

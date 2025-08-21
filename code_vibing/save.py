@@ -17,6 +17,7 @@ def save_playlist(
         scr_pos[1],
         "Do you want to save this playlist? Press y to save, n to cancel. ",
     )
+    stdscr.refresh()
     key = stdscr.getkey()
     if key not in ("y", "Y"):
         return
@@ -29,6 +30,7 @@ def save_playlist(
             "to a new directory? Press y to overwrite, n to save it to a new "
             "directory, or any other key to cancel.",
         )
+        stdscr.refresh()
     key = stdscr.getkey()
     if key not in ("y", "Y", "n", "N"):
         return

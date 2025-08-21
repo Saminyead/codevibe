@@ -22,15 +22,19 @@ OPENROUTER_API_KEY = os.getenv("openrouter_api_key")
 
 def main():
     config = read_toml_ok(config_path=CONFIG_FILE)
-    if not config:
-        model = MODEL
-        save_dir = SAVE_PLAYLIST_DIR
-    else:
+    if config:
         try:
             model = config["ai"]["model"]
             save_dir = config["directories"]["save_dir"]
         except KeyError:
             model = MODEL
+            save_dir = SAVE_PLAYLIST_DIR
+    else:
+        model = MODEL
+        save_dir = SAVE_PLAYLIST_DIR
+    if not model:
+        model = MODEL
+    if not save_dir:
             save_dir = SAVE_PLAYLIST_DIR
     app_def_args = functools.partial(
         app,
