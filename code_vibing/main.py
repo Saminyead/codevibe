@@ -39,7 +39,7 @@ def main():
     app_def_args = functools.partial(
         app,
         model=model,
-        save_playlist_dir=save_dir,
+        save_all_playlist_dir=save_dir,
         openrouter_url=OPENROUTER_URL,
         ai_api_key=OPENROUTER_API_KEY,
         logger=LOGGER,

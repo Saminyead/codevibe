@@ -9,6 +9,8 @@ from pathlib import Path
 
 import toml
 
+import shutil
+
 
 def download_track(yt: YouTube, dest: str, playlist: list[str], max_retries: int = 3):
     ys = yt.streams.get_audio_only()
@@ -17,6 +19,7 @@ def download_track(yt: YouTube, dest: str, playlist: list[str], max_retries: int
     song_path = ys.download(output_path=dest, max_retries=max_retries)
     if song_path:
         playlist.append(song_path)
+    return song_path
 
 
 def find_latest_playlist(playlist_path: str | Path, dt_format: str):
@@ -67,18 +70,31 @@ def download_tracks_all(
     yt_list: list[YouTube],
     playlist_folder: str,
     playlist: list[str],
+    to_save: bool,
+    save_all_playlist_dir: str | Path,
+    save_playlist_name: str | Path,
     logger: logging.RootLogger,
 ):
     for yt in yt_list:
         try:
-            download_track(yt=yt, dest=playlist_folder, playlist=playlist)
+            song_path = download_track(yt=yt, dest=playlist_folder, playlist=playlist)
+            if to_save:
+                save_playlist_dir = f"{save_all_playlist_dir}/{save_playlist_name}"
+                if not os.path.exists(save_all_playlist_dir):
+                    os.mkdir(save_all_playlist_dir)
+                if not os.path.exists(save_playlist_dir):
+                    os.mkdir(save_playlist_dir)
+                shutil.copy(
+                    src=song_path,
+                    dst=save_playlist_dir,
+                )
         except PytubeFixError:
             logger.error(f"Error downloading track for url {yt.watch_url}")
             continue
 
 
 def read_toml_ok(config_path: str | Path) -> dict | None:
-    """Checks if the toml file is okay. If okay, then returns the toml 
+    """Checks if the toml file is okay. If okay, then returns the toml
     contents as dict."""
     if not os.path.exists(config_path):
         return
@@ -86,7 +102,7 @@ def read_toml_ok(config_path: str | Path) -> dict | None:
         config_str = fp.read()
     try:
         return toml.loads(config_str)
-    except (toml.decoder.TomlDecodeError):
+    except toml.decoder.TomlDecodeError:
         return
 
 
@@ -96,6 +112,6 @@ def get_ai_model(config_path: str | Path, default_model: str):
         return default_model
     try:
         model = config["ai"]["model"] if config["ai"]["model"] else default_model
-    except (KeyError):
+    except KeyError:
         model = default_model
     return model

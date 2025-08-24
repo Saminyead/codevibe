@@ -13,7 +13,6 @@ import tempfile
 
 from logging import RootLogger
 
-from save import save_playlist
 from pathlib import Path
 
 
@@ -131,7 +130,7 @@ def app(
     ai_api_key: str | None,
     openrouter_url: str,
     model: str,
-    save_playlist_dir: str | Path,
+    save_all_playlist_dir: str | Path,
     logger: RootLogger,
     init_scr_pos: tuple[int, int] = (0, 0),
 ):
@@ -201,6 +200,17 @@ def app(
         song_list_str = f"{song_list_str}\n\t{i+1}. {song}"
     stdscr.addstr(song_list_y, song_list_x, song_list_str)
     stdscr.refresh()
+    stdscr.addstr(
+        stdscr.getyx()[0] + 2,
+        0,
+        "Do you want to save this playlist? Press y to save, n to cancel. ",
+    )
+    stdscr.refresh()
+    to_save = False
+    to_save_key = stdscr.getkey()
+    if to_save_key in ("y", "Y"):
+        to_save = True
+    overwrite_scr_pos = stdscr.getyx()[0] + 2, 0
     all_playlist_folder = "codevibe"
     playlist_folder_prefix = "codevibe_playlist_"
     temp_dir = tempfile.gettempdir()
@@ -209,13 +219,6 @@ def app(
     date_now = datetime.now().strftime(dt_format)
     playlist_dir_name = f"{playlist_folder_prefix}{date_now}"
     playlist_folder = f"{codevibe_folder}/{playlist_dir_name}"
-    save_playlist(
-        playlist_dir_name=playlist_dir_name,
-        playlist_dir=codevibe_folder,
-        save_dir=save_playlist_dir,
-        stdscr=stdscr,
-        scr_pos=(stdscr.getyx()[0] + 2, 0)
-    )
     if not os.path.exists(codevibe_folder):
         os.mkdir(codevibe_folder)
     playlist = get_yt_obj_list(song_list=song_list, logger=logger)
@@ -234,6 +237,9 @@ def app(
             "playlist_folder": playlist_folder,
             "playlist": player.playlist,
             "logger": logger,
+            "to_save": to_save,
+            "save_all_playlist_dir": save_all_playlist_dir,
+            "save_playlist_name": playlist_dir_name
         },
     ).start()
     player.play_all_songs()
