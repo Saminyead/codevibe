@@ -14,6 +14,7 @@ import tempfile
 from logging import RootLogger
 
 from pathlib import Path
+from pytubefix import YouTube
 
 
 def get_user_input_textbox(begin_pos: tuple[int, int]):
@@ -125,6 +126,61 @@ def get_api_keys_from_user(
     return openrouter_api_key
 
 
+def get_new_playlist(
+    stdscr:curses.window,
+    init_scr_pos:tuple[int,int],
+    ai_api_key:str,
+    openrouter_url:str,
+    model:str,
+    logger:RootLogger
+) -> dict:
+    try:
+        song_list = get_recommended_song_list(
+            stdscr,
+            scr_pos=init_scr_pos,
+            ai_api_key=ai_api_key,
+            url=openrouter_url,
+            model=model,
+            logger=logger,
+        )
+    except Exception:
+        return
+    stdscr.refresh()
+    song_list_y, song_list_x = stdscr.getyx()[0] + 2, 0
+    song_list_str = f"Songs recommended by AI: "
+    for i, song in enumerate(song_list):
+        song_list_str = f"{song_list_str}\n\t{i+1}. {song}"
+    stdscr.addstr(song_list_y, song_list_x, song_list_str)
+    stdscr.refresh()
+    stdscr.addstr(
+        stdscr.getyx()[0] + 2,
+        0,
+        "Do you want to save this playlist? Press y to save, n to cancel. ",
+    )
+    stdscr.refresh()
+    to_save = False
+    to_save_key = stdscr.getkey()
+    if to_save_key in ("y", "Y"):
+        to_save = True
+    all_playlist_folder = "codevibe"
+    playlist_folder_prefix = "codevibe_playlist_"
+    temp_dir = tempfile.gettempdir()
+    codevibe_folder = f"{temp_dir}/{all_playlist_folder}"
+    dt_format = "%Y-%m-%d_%H-%M-%S"
+    date_now = datetime.now().strftime(dt_format)
+    playlist_dir_name = f"{playlist_folder_prefix}{date_now}"
+    playlist_folder = f"{codevibe_folder}/{playlist_dir_name}"
+    if not os.path.exists(codevibe_folder):
+        os.mkdir(codevibe_folder)
+    playlist = get_yt_obj_list(song_list=song_list, logger=logger)
+    os.mkdir(playlist_folder)
+    return {
+        "playlist": playlist,
+        "playlist_folder": playlist_folder,
+        "playlist_dir_name": playlist_dir_name,
+        "to_save": to_save
+    }
+
 def app(
     stdscr: curses.window,
     ai_api_key: str | None,
@@ -182,47 +238,26 @@ def app(
             stdscr,
             openrouter_api_key=ai_api_key,
         )
-    try:
-        song_list = get_recommended_song_list(
-            stdscr,
-            scr_pos=init_scr_pos,
-            ai_api_key=ai_api_key,
-            url=openrouter_url,
-            model=model,
-            logger=logger,
-        )
-    except Exception:
-        return
-    stdscr.refresh()
-    song_list_y, song_list_x = stdscr.getyx()[0] + 2, 0
-    song_list_str = f"Songs recommended by AI: "
-    for i, song in enumerate(song_list):
-        song_list_str = f"{song_list_str}\n\t{i+1}. {song}"
-    stdscr.addstr(song_list_y, song_list_x, song_list_str)
-    stdscr.refresh()
-    stdscr.addstr(
-        stdscr.getyx()[0] + 2,
-        0,
-        "Do you want to save this playlist? Press y to save, n to cancel. ",
+    # if saved_playlists:=os.listdir(save_all_playlist_dir):
+    #     stdscr.addstr(
+    #         stdscr.getyx()[0] + 2,
+    #         0,
+    #         "Saved playlists found. Do you want to play from the existing "
+    #         "playlists? Press y to select from the existing playlists, or "
+    #         "press n to make a new playlist."
+    #     )
+    playlist_playlist_folder_to_save = get_new_playlist(
+        stdscr=stdscr,
+        ai_api_key=ai_api_key,
+        init_scr_pos=(stdscr.getyx()[0] + 2, 0),
+        logger=logger,
+        model=model,
+        openrouter_url=openrouter_url
     )
-    stdscr.refresh()
-    to_save = False
-    to_save_key = stdscr.getkey()
-    if to_save_key in ("y", "Y"):
-        to_save = True
-    overwrite_scr_pos = stdscr.getyx()[0] + 2, 0
-    all_playlist_folder = "codevibe"
-    playlist_folder_prefix = "codevibe_playlist_"
-    temp_dir = tempfile.gettempdir()
-    codevibe_folder = f"{temp_dir}/{all_playlist_folder}"
-    dt_format = "%Y-%m-%d_%H-%M-%S"
-    date_now = datetime.now().strftime(dt_format)
-    playlist_dir_name = f"{playlist_folder_prefix}{date_now}"
-    playlist_folder = f"{codevibe_folder}/{playlist_dir_name}"
-    if not os.path.exists(codevibe_folder):
-        os.mkdir(codevibe_folder)
-    playlist = get_yt_obj_list(song_list=song_list, logger=logger)
-    os.mkdir(playlist_folder)
+    playlist = playlist_playlist_folder_to_save["playlist"]
+    to_save = playlist_playlist_folder_to_save["to_save"]
+    playlist_folder = playlist_playlist_folder_to_save["playlist_folder"]
+    playlist_dir_name = playlist_playlist_folder_to_save["playlist_dir_name"]
     player_init_pos = stdscr.getyx()[0] + 3, 0
     player = MusicPlayer(
         playlist_folder=playlist_folder,
