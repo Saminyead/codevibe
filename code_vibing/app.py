@@ -232,6 +232,67 @@ def get_new_playlist(
     return len(playlist) 
 
 
+def get_saved_playlist(
+    stdscr: curses.window,
+    scr_pos: tuple[int, int],
+    save_dir: str | Path
+) -> list[str] | None:
+    stdscr.addstr(
+        scr_pos[0],
+        scr_pos[1],
+        "Saved playlists found. Do you want to play from the existing "
+        "playlists? Press y to select from the existing playlists, or "
+        "press n to make a new playlist."
+    )
+    key = stdscr.getkey()
+    if key not in ("y", "Y"):
+        stdscr.clrtobot()
+        stdscr.refresh()
+        return
+    stdscr.addstr(
+        stdscr.getyx()[0] + 2,
+        0,
+        "Press the number of the corresponding playlist to select the playlist."
+    )
+    playlist_list = [
+        os.path.join(save_dir,playlist) for playlist in os.listdir(save_dir)
+    ]
+    playlist_list_str = ""
+    for i, playlist in enumerate(playlist_list):
+        playlist_list_str = f"{playlist_list_str}{i+1}. {playlist}\n"
+    stdscr.addstr(
+        stdscr.getyx()[0] + 2,
+        0,
+        playlist_list_str
+    )
+    playlist_index = None
+    next_scr_pos = stdscr.getyx()[0] + 2, 0
+    while not playlist_index:
+        stdscr.move(next_scr_pos[0], next_scr_pos[1])
+        playlist_index_str = stdscr.getkey()
+        stdscr.clrtoeol()
+        if not playlist_index_str.isdigit():
+            stdscr.addstr("You have not pressed a number. Try again.")
+            stdscr.refresh()
+            continue
+        playlist_index = int(playlist_index_str) - 1
+        if playlist_index not in range(0, len(playlist_list)):
+            stdscr.addstr(
+                "The number you entered does not match any playlist. Try again."
+            )
+            playlist_index = None
+            stdscr.refresh()
+            continue
+    selected_playlist_folder = playlist_list[playlist_index]
+    selected_playlist = [
+        os.path.join(selected_playlist_folder, song) for song in 
+        os.listdir(selected_playlist_folder)
+    ]
+    stdscr.clrtobot()
+    stdscr.refresh()
+    return selected_playlist
+
+
 def app(
     stdscr: curses.window,
     ai_api_key: str | None,
@@ -246,30 +307,30 @@ def app(
             stdscr,
             openrouter_api_key=ai_api_key,
         )
-    if saved_playlists:=os.listdir(save_all_playlist_dir):
-        stdscr.addstr(
-            stdscr.getyx()[0] + 2,
-            0,
-            "Saved playlists found. Do you want to play from the existing "
-            "playlists? Press y to select from the existing playlists, or "
-            "press n to make a new playlist."
+    selected_playlist = None
+    if os.listdir(save_all_playlist_dir):
+        selected_playlist = get_saved_playlist(
+            stdscr=stdscr, 
+            scr_pos=(stdscr.getyx()[0] + 2, 0),
+            save_dir=save_all_playlist_dir
         )
-        stdscr.getch()
-        stdscr.clrtobot()
-        stdscr.refresh()
     player = MusicPlayer(
         screen=stdscr
     )
-    expected_len = get_new_playlist(
-        stdscr=stdscr,
-        ai_api_key=ai_api_key,
-        init_scr_pos=init_scr_pos,
-        logger=logger,
-        model=model,
-        openrouter_url=openrouter_url,
-        save_all_playlist_dir=save_all_playlist_dir,
-        player=player
-    )
+    if not selected_playlist:
+        expected_len = get_new_playlist(
+            stdscr=stdscr,
+            ai_api_key=ai_api_key,
+            init_scr_pos=init_scr_pos,
+            logger=logger,
+            model=model,
+            openrouter_url=openrouter_url,
+            save_all_playlist_dir=save_all_playlist_dir,
+            player=player
+        )
+    else:
+        expected_len = len(selected_playlist)
+        player.playlist = selected_playlist
     if not expected_len:
         return
     player_init_pos = stdscr.getyx()[0] + 3, 0
