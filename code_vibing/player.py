@@ -10,12 +10,10 @@ from typing import Callable
 class MusicPlayer:
     def __init__(
         self,
-        playlist_folder: str | Path,
-        expected_len: int,
         screen: curses.window,
+        expected_len: int = 0,
         screen_init_pos=(0, 0),
     ):
-        self.playlist_folder: str | Path = playlist_folder
         self.playlist: list[str | Path] = []
         self.expected_len: int = expected_len
         self.index: int = 0

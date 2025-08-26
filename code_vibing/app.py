@@ -14,7 +14,48 @@ import tempfile
 from logging import RootLogger
 
 from pathlib import Path
-from pytubefix import YouTube
+
+VLC_INSTALLED = False
+PLATFORM_ARCH = None
+
+# -- I hate having to do all of the below, but this is the best way I found
+# to import the VLC package, and make sure there are no errors because of the
+# way VLC python package works. UGH!
+# Windows throws error during the very import of vlc Python package
+# if VLC is not installed
+try:
+    from player import MusicPlayer
+    VLC_INSTALLED = True
+except Exception as e:
+    import platform
+    PLATFORM_ARCH = platform.architecture()[0]
+    print(
+        "This program requires VLC Media Player to run. Please install "
+        "VLC Media Player and launch the program again. If it is already "
+        f"installed make sure it is the {PLATFORM_ARCH} version of VLC.",
+    )
+    input("Press Enter to exit")
+    raise
+
+# sometimes plugin path not properly detected in Linux
+if sys.platform == "linux":
+    check_vlc_plugin_path = subprocess.check_output(
+        ["find", "/usr/lib", "-type", "d", "-name", "plugins", "-path", "*/vlc/*"],
+        text=True,
+    )
+    plugin_path = check_vlc_plugin_path.strip()
+    os.environ["VLC_PLUGIN_PATH"] = plugin_path
+try:
+    import vlc
+    vlc.Instance()  # best way to test for Linux
+    VLC_INSTALLED = True
+except NameError:
+    print(
+        "This program requires VLC Media Player to run. Please install "
+        "VLC Media Player and launch the program again.",
+    )
+    input("Press Enter to exit")
+    raise
 
 
 def get_user_input_textbox(begin_pos: tuple[int, int]):
@@ -132,8 +173,10 @@ def get_new_playlist(
     ai_api_key:str,
     openrouter_url:str,
     model:str,
+    player:MusicPlayer,
+    save_all_playlist_dir:str | Path,
     logger:RootLogger
-) -> dict:
+) -> int | None:
     try:
         song_list = get_recommended_song_list(
             stdscr,
@@ -174,97 +217,6 @@ def get_new_playlist(
         os.mkdir(codevibe_folder)
     playlist = get_yt_obj_list(song_list=song_list, logger=logger)
     os.mkdir(playlist_folder)
-    return {
-        "playlist": playlist,
-        "playlist_folder": playlist_folder,
-        "playlist_dir_name": playlist_dir_name,
-        "to_save": to_save
-    }
-
-def app(
-    stdscr: curses.window,
-    ai_api_key: str | None,
-    openrouter_url: str,
-    model: str,
-    save_all_playlist_dir: str | Path,
-    logger: RootLogger,
-    init_scr_pos: tuple[int, int] = (0, 0),
-):
-    # sometimes plugin path not properly detected in Linux
-    if sys.platform == "linux":
-        check_vlc_plugin_path = subprocess.check_output(
-            ["find", "/usr/lib", "-type", "d", "-name", "plugins", "-path", "*/vlc/*"],
-            text=True,
-        )
-        plugin_path = check_vlc_plugin_path.strip()
-        os.environ["VLC_PLUGIN_PATH"] = plugin_path
-    # Windows throws error during the very import of vlc Python package
-    # if VLC is not installed
-    try:
-        from player import MusicPlayer
-    # the exception is different when running normally vs frozen.
-    # need to keep an eye out if other kinds of exceptions occur
-    except Exception as e:
-        import platform
-
-        bit_version = platform.architecture()[0]
-        logger.error(f"The following error occurred while import the VLC package: {e}")
-        stdscr.addstr(
-            0,
-            0,
-            "This program requires VLC Media Player to run. Please install "
-            "VLC Media Player and launch the program again. If it is already "
-            f"installed make sure it is the {bit_version} version of VLC.",
-        )
-        stdscr.addstr(stdscr.getyx()[0] + 2, 0, "Press any key to exit.")
-        stdscr.getch()
-        return
-    try:
-        import vlc
-
-        vlc.Instance()  # best way to test for Linux
-    except NameError:
-        stdscr.addstr(
-            0,
-            0,
-            "This program requires VLC Media Player to run. Please install "
-            "VLC Media Player and launch the program again.",
-        )
-        stdscr.addstr(stdscr.getyx()[0] + 2, 0, "Press any key to exit.")
-        stdscr.getch()
-        return
-    if not ai_api_key:
-        ai_api_key = get_api_keys_from_user(
-            stdscr,
-            openrouter_api_key=ai_api_key,
-        )
-    # if saved_playlists:=os.listdir(save_all_playlist_dir):
-    #     stdscr.addstr(
-    #         stdscr.getyx()[0] + 2,
-    #         0,
-    #         "Saved playlists found. Do you want to play from the existing "
-    #         "playlists? Press y to select from the existing playlists, or "
-    #         "press n to make a new playlist."
-    #     )
-    playlist_playlist_folder_to_save = get_new_playlist(
-        stdscr=stdscr,
-        ai_api_key=ai_api_key,
-        init_scr_pos=(stdscr.getyx()[0] + 2, 0),
-        logger=logger,
-        model=model,
-        openrouter_url=openrouter_url
-    )
-    playlist = playlist_playlist_folder_to_save["playlist"]
-    to_save = playlist_playlist_folder_to_save["to_save"]
-    playlist_folder = playlist_playlist_folder_to_save["playlist_folder"]
-    playlist_dir_name = playlist_playlist_folder_to_save["playlist_dir_name"]
-    player_init_pos = stdscr.getyx()[0] + 3, 0
-    player = MusicPlayer(
-        playlist_folder=playlist_folder,
-        expected_len=len(playlist),
-        screen=stdscr,
-        screen_init_pos=player_init_pos,
-    )
     threading.Thread(
         target=download_tracks_all,
         kwargs={
@@ -277,4 +229,50 @@ def app(
             "save_playlist_name": playlist_dir_name
         },
     ).start()
+    return len(playlist) 
+
+
+def app(
+    stdscr: curses.window,
+    ai_api_key: str | None,
+    openrouter_url: str,
+    model: str,
+    save_all_playlist_dir: str | Path,
+    logger: RootLogger,
+    init_scr_pos: tuple[int, int] = (0, 0),
+):
+    if not ai_api_key:
+        ai_api_key = get_api_keys_from_user(
+            stdscr,
+            openrouter_api_key=ai_api_key,
+        )
+    if saved_playlists:=os.listdir(save_all_playlist_dir):
+        stdscr.addstr(
+            stdscr.getyx()[0] + 2,
+            0,
+            "Saved playlists found. Do you want to play from the existing "
+            "playlists? Press y to select from the existing playlists, or "
+            "press n to make a new playlist."
+        )
+        stdscr.getch()
+        stdscr.clrtobot()
+        stdscr.refresh()
+    player = MusicPlayer(
+        screen=stdscr
+    )
+    expected_len = get_new_playlist(
+        stdscr=stdscr,
+        ai_api_key=ai_api_key,
+        init_scr_pos=init_scr_pos,
+        logger=logger,
+        model=model,
+        openrouter_url=openrouter_url,
+        save_all_playlist_dir=save_all_playlist_dir,
+        player=player
+    )
+    if not expected_len:
+        return
+    player_init_pos = stdscr.getyx()[0] + 3, 0
+    player.screen_init_pos = player_init_pos
+    player.expected_len = expected_len
     player.play_all_songs()
