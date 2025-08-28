@@ -10,6 +10,7 @@ from datetime import datetime
 
 from utils import download_tracks_all, get_yt_obj_list
 import tempfile
+import calendar
 
 from logging import RootLogger
 
@@ -25,9 +26,11 @@ PLATFORM_ARCH = None
 # if VLC is not installed
 try:
     from player import MusicPlayer
+
     VLC_INSTALLED = True
 except Exception as e:
     import platform
+
     PLATFORM_ARCH = platform.architecture()[0]
     print(
         "This program requires VLC Media Player to run. Please install "
@@ -47,6 +50,7 @@ if sys.platform == "linux":
     os.environ["VLC_PLUGIN_PATH"] = plugin_path
 try:
     import vlc
+
     vlc.Instance()  # best way to test for Linux
     VLC_INSTALLED = True
 except NameError:
@@ -168,14 +172,14 @@ def get_api_keys_from_user(
 
 
 def get_new_playlist(
-    stdscr:curses.window,
-    init_scr_pos:tuple[int,int],
-    ai_api_key:str,
-    openrouter_url:str,
-    model:str,
-    player:MusicPlayer,
-    save_all_playlist_dir:str | Path,
-    logger:RootLogger
+    stdscr: curses.window,
+    init_scr_pos: tuple[int, int],
+    ai_api_key: str,
+    openrouter_url: str,
+    model: str,
+    player: MusicPlayer,
+    save_all_playlist_dir: str | Path,
+    logger: RootLogger,
 ) -> int | None:
     try:
         song_list = get_recommended_song_list(
@@ -226,23 +230,21 @@ def get_new_playlist(
             "logger": logger,
             "to_save": to_save,
             "save_all_playlist_dir": save_all_playlist_dir,
-            "save_playlist_name": playlist_dir_name
+            "save_playlist_name": playlist_dir_name,
         },
     ).start()
-    return len(playlist) 
+    return len(playlist)
 
 
 def get_saved_playlist(
-    stdscr: curses.window,
-    scr_pos: tuple[int, int],
-    save_dir: str | Path
+    stdscr: curses.window, scr_pos: tuple[int, int], save_dir: str | Path
 ) -> list[str] | None:
     stdscr.addstr(
         scr_pos[0],
         scr_pos[1],
         "Saved playlists found. Do you want to play from the existing "
         "playlists? Press y to select from the existing playlists, or "
-        "press n to make a new playlist."
+        "press n to make a new playlist.",
     )
     key = stdscr.getkey()
     if key not in ("y", "Y"):
@@ -252,19 +254,24 @@ def get_saved_playlist(
     stdscr.addstr(
         stdscr.getyx()[0] + 2,
         0,
-        "Press the number of the corresponding playlist to select the playlist."
+        "Press the number of the corresponding playlist to select the playlist.",
     )
     playlist_list = [
-        os.path.join(save_dir,playlist) for playlist in os.listdir(save_dir)
+        os.path.join(save_dir, playlist) for playlist in os.listdir(save_dir)
     ]
     playlist_list_str = ""
     for i, playlist in enumerate(playlist_list):
-        playlist_list_str = f"{playlist_list_str}{i+1}. {playlist}\n"
-    stdscr.addstr(
-        stdscr.getyx()[0] + 2,
-        0,
-        playlist_list_str
-    )
+        playlist_split = playlist.split("_")
+        # dt_format = "%Y-%m-%d_%H-%M-%S"
+        created_yy_mm_dd = playlist_split[2].split("-")
+        year, month, day = created_yy_mm_dd
+        hour, minute, second = playlist_split[3].split("-")
+        playlist_list_str = (
+            f"{playlist_list_str}{i+1}. {playlist} "
+            f"Created on {calendar.month_name[int(month)]} {day}, {year} "
+            f"at {hour}:{minute}\n"
+        )
+    stdscr.addstr(stdscr.getyx()[0] + 2, 0, playlist_list_str)
     playlist_index = None
     next_scr_pos = stdscr.getyx()[0] + 2, 0
     while not playlist_index:
@@ -285,8 +292,8 @@ def get_saved_playlist(
             continue
     selected_playlist_folder = playlist_list[playlist_index]
     selected_playlist = [
-        os.path.join(selected_playlist_folder, song) for song in 
-        os.listdir(selected_playlist_folder)
+        os.path.join(selected_playlist_folder, song)
+        for song in os.listdir(selected_playlist_folder)
     ]
     stdscr.clrtobot()
     stdscr.refresh()
@@ -310,13 +317,11 @@ def app(
     selected_playlist = None
     if os.listdir(save_all_playlist_dir):
         selected_playlist = get_saved_playlist(
-            stdscr=stdscr, 
+            stdscr=stdscr,
             scr_pos=(stdscr.getyx()[0] + 2, 0),
-            save_dir=save_all_playlist_dir
+            save_dir=save_all_playlist_dir,
         )
-    player = MusicPlayer(
-        screen=stdscr
-    )
+    player = MusicPlayer(screen=stdscr)
     if not selected_playlist:
         expected_len = get_new_playlist(
             stdscr=stdscr,
@@ -326,11 +331,11 @@ def app(
             model=model,
             openrouter_url=openrouter_url,
             save_all_playlist_dir=save_all_playlist_dir,
-            player=player
+            player=player,
         )
     else:
-        expected_len = len(selected_playlist)
         player.playlist = selected_playlist
+        expected_len = len(selected_playlist)
     if not expected_len:
         return
     player_init_pos = stdscr.getyx()[0] + 3, 0
