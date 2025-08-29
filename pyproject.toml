@@ -8,7 +8,7 @@ readme = "README.md"
 authors = [
 	{name = "Samin Yead", email = "Saminyead@gmail.com"}
 ]
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
 	"toml",
     "python-vlc",
