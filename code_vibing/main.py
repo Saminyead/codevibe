@@ -36,6 +36,8 @@ def main():
         model = MODEL
     if not save_dir:
             save_dir = SAVE_PLAYLIST_DIR
+    if not os.path.exists(save_dir):
+         os.mkdir(save_dir)
     app_def_args = functools.partial(
         app,
         model=model,
