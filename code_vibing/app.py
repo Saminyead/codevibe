@@ -274,7 +274,7 @@ def get_saved_playlist(
     stdscr.addstr(stdscr.getyx()[0] + 2, 0, playlist_list_str)
     playlist_index = None
     next_scr_pos = stdscr.getyx()[0] + 2, 0
-    while not playlist_index:
+    while playlist_index is None:
         stdscr.move(next_scr_pos[0], next_scr_pos[1])
         playlist_index_str = stdscr.getkey()
         stdscr.clrtoeol()
@@ -338,7 +338,7 @@ def app(
         expected_len = len(selected_playlist)
     if not expected_len:
         return
-    player_init_pos = stdscr.getyx()[0] + 3, 0
+    player_init_pos = stdscr.getyx()[0] + 2, 0
     player.screen_init_pos = player_init_pos
     player.expected_len = expected_len
     player.play_all_songs()
